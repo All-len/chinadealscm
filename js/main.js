@@ -30,7 +30,43 @@ function renderWaFloat(){
   document.body.appendChild(waLink);
 }
 
+/* --- Coordonnées dans le footer / page contact (appelé une fois les données chargées) --- */
+function renderContactInfo(){
+  const map = {
+    'footer-phone': CONTACT.telephone,
+    'footer-email': CONTACT.email,
+    'footer-address': CONTACT.ville,
+    'contact-phone': CONTACT.telephone,
+    'contact-email': CONTACT.email,
+    'contact-address': CONTACT.ville,
+    'legal-phone': CONTACT.telephone,
+    'legal-email': CONTACT.email
+  };
+  Object.keys(map).forEach(function(id){
+    const el = document.getElementById(id);
+    if (el && map[id]) el.textContent = map[id];
+  });
+}
+
+/* --- Boutons WhatsApp statiques (hors bouton flottant), ex: "Discuter sur WhatsApp" --- */
+function renderStaticWaLinks(){
+  document.querySelectorAll('.wa-static-link').forEach(function(link){
+    const msg = link.getAttribute('data-msg');
+    link.href = `https://wa.me/${CONTACT.whatsappNumber}` + (msg ? `?text=${msg}` : '');
+  });
+}
+
 /* --- Rendu d'une carte produit (utilisé en accueil et catalogue) --- */
+function ratingStarsHTML(p){
+  if (!p.ratingCount) return '';
+  return `<div class="rating-line">★ ${p.ratingAvg.toFixed(1)} <span>(${p.ratingCount} avis)</span></div>`;
+}
+
+function stockBadgeHTML(p){
+  const info = DISPONIBILITE_LABELS[p.disponibilite] || DISPONIBILITE_LABELS['en_stock'];
+  return `<span class="stock-badge ${info.className}">${info.label}</span>`;
+}
+
 function productCardHTML(p){
   const hasImage = p.images && p.images.length > 0;
   const thumbContent = hasImage
@@ -45,8 +81,10 @@ function productCardHTML(p){
     <div class="body">
       <div class="cat">${p.categorieLabel}</div>
       <h3>${p.nom}</h3>
+      ${ratingStarsHTML(p)}
       <div class="price">${formatFCFA(p.prix)} <small>selon transport</small></div>
-      <span class="btn btn-outline btn-block">Voir le produit</span>
+      ${stockBadgeHTML(p)}
+      <span class="btn btn-outline btn-block" style="margin-top:10px;">Voir le produit</span>
     </div>
   </a>`;
 }
@@ -61,9 +99,13 @@ function productIconSVG(categorie){
 }
 
 /* --- Filtrage du catalogue (utilisé sur produits.html) --- */
-function filterProducts(categorie, tri){
+function filterProducts(categorie, tri, recherche){
   let list = [...PRODUCTS];
   if (categorie && categorie !== 'all') list = list.filter(p => p.categorie === categorie);
+  if (recherche && recherche.trim()){
+    const q = recherche.trim().toLowerCase();
+    list = list.filter(p => p.nom.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+  }
   if (tri === 'prix-asc') list.sort((a,b)=>a.prix-b.prix);
   if (tri === 'prix-desc') list.sort((a,b)=>b.prix-a.prix);
   return list;

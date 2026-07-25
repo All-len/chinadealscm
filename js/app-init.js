@@ -7,5 +7,7 @@
 document.addEventListener('DOMContentLoaded', async function(){
   await loadSiteData();
   renderWaFloat();
+  renderContactInfo();
+  renderStaticWaLinks();
   document.dispatchEvent(new Event('sitedata:ready'));
 });

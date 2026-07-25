@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contact — PrecoTech237</title>
+<link rel="icon" type="image/png" href="images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PrecoTech237">
+<meta property="og:title" content="Contact — PrecoTech237">
+<meta property="og:description" content="PrecoTech237 importe pour vous laptops, PC Gaming et téléphones de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
+<meta property="og:image" content="https://chinadealscm.netlify.app/images/og-image.png">
+<meta property="og:url" content="https://chinadealscm.netlify.app/contact.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Contact — PrecoTech237">
+<meta name="twitter:description" content="PrecoTech237 importe pour vous laptops, PC Gaming et téléphones de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
+<meta name="twitter:image" content="https://chinadealscm.netlify.app/images/og-image.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -40,19 +53,19 @@
       <div style="display:flex; flex-direction:column; gap:18px; margin-top:28px;">
         <div class="card" style="padding:18px 20px; display:flex; align-items:center; gap:14px;">
           <div class="icon-badge blue" data-icon="chat"></div>
-          <div><b>WhatsApp</b><br><span style="color:var(--slate);">+237 6XX XXX XXX</span></div>
+          <div><b>WhatsApp</b><br><span style="color:var(--slate);" id="contact-phone">+237 6XX XXX XXX</span></div>
         </div>
         <div class="card" style="padding:18px 20px; display:flex; align-items:center; gap:14px;">
           <div class="icon-badge blue" data-icon="mail"></div>
-          <div><b>E-mail</b><br><span style="color:var(--slate);">contact@precotech237.com</span></div>
+          <div><b>E-mail</b><br><span style="color:var(--slate);" id="contact-email">contact@precotech237.com</span></div>
         </div>
         <div class="card" style="padding:18px 20px; display:flex; align-items:center; gap:14px;">
           <div class="icon-badge blue" data-icon="pin"></div>
-          <div><b>Localisation</b><br><span style="color:var(--slate);">Bafoussam, Cameroun</span></div>
+          <div><b>Localisation</b><br><span style="color:var(--slate);" id="contact-address">Bafoussam, Cameroun</span></div>
         </div>
       </div>
 
-      <a href="https://wa.me/237600000000" target="_blank" class="btn btn-whatsapp" style="margin-top:24px;">Discuter maintenant sur WhatsApp</a>
+      <a href="#" class="wa-static-link btn btn-whatsapp" target="_blank"  style="margin-top:24px;">Discuter maintenant sur WhatsApp</a>
     </div>
 
     <div class="form-card">
@@ -103,14 +116,17 @@
         <ul>
           <li><a href="contact.html">Contact</a></li>
           <li><a href="commander.html">Passer commande</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="garantie-retours.html">Garantie &amp; retours</a></li>
+          <li><a href="mentions-legales.html">Mentions légales</a></li>
         </ul>
       </div>
       <div>
         <h4>Contact</h4>
         <ul>
-          <li><span class="ic-inline" data-icon="phone"></span> +237 6XX XXX XXX</li>
-          <li><span class="ic-inline" data-icon="mail"></span> contact@precotech237.com</li>
-          <li><span class="ic-inline" data-icon="pin"></span> Bafoussam, Cameroun</li>
+          <li><span class="ic-inline" data-icon="phone"></span> <span id="footer-phone">+237 6XX XXX XXX</span></li>
+          <li><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech237.com</span></li>
+          <li><span class="ic-inline" data-icon="pin"></span> <span id="footer-address">Bafoussam, Cameroun</span></li>
         </ul>
       </div>
     </div>
@@ -123,6 +139,7 @@
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
+<script src="js/analytics.js"></script>
 <script src="js/data.js"></script>
 <script src="js/icons.js"></script>
 <script src="js/reveal.js"></script>

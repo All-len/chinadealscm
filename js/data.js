@@ -35,9 +35,18 @@ function mapDbProduct(row){
     largeurCm: Number(row.largeur_cm) || 0,
     hauteurCm: Number(row.hauteur_cm) || 0,
     images: row.images || [],
-    videoUrl: row.video_url || ''
+    videoUrl: row.video_url || '',
+    disponibilite: row.disponibilite || 'en_stock',
+    ratingAvg: 0,
+    ratingCount: 0
   };
 }
+
+const DISPONIBILITE_LABELS = {
+  'en_stock': { label: 'En stock', className: 'stock-ok' },
+  'sur_commande': { label: 'Sur commande', className: 'stock-order' },
+  'rupture': { label: 'Rupture temporaire', className: 'stock-out' }
+};
 
 /* Volume d'un carton en CBM (mètres cubes) à partir de ses dimensions en cm */
 function calcCBM(product){
@@ -84,6 +93,26 @@ async function loadSiteData(){
       if (row.key === 'contact') Object.assign(CONTACT, row.value);
       if (row.key === 'transport_modes') TRANSPORT_MODES = row.value;
     });
+
+    // Note moyenne par produit, calculée à partir de tous les avis
+    const { data: reviewRows, error: revErr } = await supabaseClient
+      .from('reviews')
+      .select('product_id, note');
+
+    if (!revErr && reviewRows){
+      const grouped = {};
+      reviewRows.forEach(function(r){
+        if (!grouped[r.product_id]) grouped[r.product_id] = [];
+        grouped[r.product_id].push(r.note);
+      });
+      PRODUCTS.forEach(function(p){
+        const notes = grouped[p.id];
+        if (notes && notes.length){
+          p.ratingAvg = Math.round((notes.reduce((a,b) => a+b, 0) / notes.length) * 10) / 10;
+          p.ratingCount = notes.length;
+        }
+      });
+    }
 
   } catch(err){
     console.error('Erreur de chargement Supabase, utilisation des valeurs par défaut :', err);

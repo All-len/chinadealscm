@@ -191,6 +191,7 @@ function openProductModal(id){
     document.getElementById('p-prix').value = p.prix;
     document.getElementById('p-badge').value = p.badge || '';
     document.getElementById('p-etat').value = p.etat || '';
+    document.getElementById('p-disponibilite').value = p.disponibilite || 'en_stock';
     document.getElementById('p-description').value = p.description || '';
     document.getElementById('p-poids').value = p.poidsKg || '';
     document.getElementById('p-longueur').value = p.longueurCm || '';
@@ -259,6 +260,7 @@ async function submitProductForm(e){
     categorie_label: catLabels[categorie],
     prix: Number(document.getElementById('p-prix').value),
     etat: document.getElementById('p-etat').value.trim(),
+    disponibilite: document.getElementById('p-disponibilite').value,
     badge: document.getElementById('p-badge').value.trim(),
     description: document.getElementById('p-description').value.trim(),
     specs: specs,

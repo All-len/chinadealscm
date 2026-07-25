@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Espace administrateur — PrecoTech237</title>
+<link rel="icon" type="image/png" href="images/favicon-32.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
 <style>
   body{ background: var(--off-white); }
@@ -220,6 +222,14 @@
       <div class="form-row">
         <label>État</label>
         <input type="text" id="p-etat" placeholder="Ex : Neuf, scellé d'usine">
+      </div>
+      <div class="form-row">
+        <label>Disponibilité</label>
+        <select id="p-disponibilite">
+          <option value="en_stock">En stock</option>
+          <option value="sur_commande">Sur commande</option>
+          <option value="rupture">Rupture temporaire</option>
+        </select>
       </div>
       <div class="form-row">
         <label>Photos du produit</label>

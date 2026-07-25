@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /commander.html
+
+Sitemap: https://chinadealscm.netlify.app/sitemap.xml

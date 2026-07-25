@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nos produits — PrecoTech237</title>
 <meta name="description" content="Découvrez notre catalogue de laptops, PC Gaming et téléphones importés de Chine, avec choix du mode de transport.">
+<link rel="icon" type="image/png" href="images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PrecoTech237">
+<meta property="og:title" content="Nos produits — PrecoTech237">
+<meta property="og:description" content="Découvrez notre catalogue de laptops, PC Gaming et téléphones importés de Chine, avec choix du mode de transport.">
+<meta property="og:image" content="https://chinadealscm.netlify.app/images/og-image.png">
+<meta property="og:url" content="https://chinadealscm.netlify.app/produits.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nos produits — PrecoTech237">
+<meta name="twitter:description" content="Découvrez notre catalogue de laptops, PC Gaming et téléphones importés de Chine, avec choix du mode de transport.">
+<meta name="twitter:image" content="https://chinadealscm.netlify.app/images/og-image.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -40,6 +53,10 @@
     </div>
 
     <div class="filters-bar">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="filter-search" placeholder="Rechercher un produit (ex : HP, RTX, Galaxy...)">
+      </div>
       <label>Catégorie
         <select id="filter-cat">
           <option value="all">Toutes les catégories</option>
@@ -66,7 +83,7 @@
   <div class="container">
     <h2>Vous ne trouvez pas ce que vous cherchez ?</h2>
     <p>Contactez-nous, nous pouvons sourcer d'autres modèles directement en Chine sur demande.</p>
-    <a href="https://wa.me/237600000000" target="_blank" class="btn btn-whatsapp">Contactez-nous sur WhatsApp</a>
+    <a href="#" class="wa-static-link btn btn-whatsapp" target="_blank" >Contactez-nous sur WhatsApp</a>
   </div>
 </section>
 
@@ -91,14 +108,17 @@
         <ul>
           <li><a href="contact.html">Contact</a></li>
           <li><a href="commander.html">Passer commande</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="garantie-retours.html">Garantie &amp; retours</a></li>
+          <li><a href="mentions-legales.html">Mentions légales</a></li>
         </ul>
       </div>
       <div>
         <h4>Contact</h4>
         <ul>
-          <li><span class="ic-inline" data-icon="phone"></span> +237 6XX XXX XXX</li>
-          <li><span class="ic-inline" data-icon="mail"></span> contact@precotech237.com</li>
-          <li><span class="ic-inline" data-icon="pin"></span> Bafoussam, Cameroun</li>
+          <li><span class="ic-inline" data-icon="phone"></span> <span id="footer-phone">+237 6XX XXX XXX</span></li>
+          <li><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech237.com</span></li>
+          <li><span class="ic-inline" data-icon="pin"></span> <span id="footer-address">Bafoussam, Cameroun</span></li>
         </ul>
       </div>
     </div>
@@ -111,6 +131,7 @@
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
+<script src="js/analytics.js"></script>
 <script src="js/data.js"></script>
 <script src="js/icons.js"></script>
 <script src="js/reveal.js"></script>
@@ -121,10 +142,11 @@
     const grid = document.getElementById('catalog-grid');
     const catSelect = document.getElementById('filter-cat');
     const sortSelect = document.getElementById('filter-sort');
+    const searchInput = document.getElementById('filter-search');
 
     function render(){
-      const list = filterProducts(catSelect.value, sortSelect.value);
-      grid.innerHTML = list.map(productCardHTML).join('') || '<p>Aucun produit dans cette catégorie pour le moment.</p>';
+      const list = filterProducts(catSelect.value, sortSelect.value, searchInput.value);
+      grid.innerHTML = list.map(productCardHTML).join('') || '<p>Aucun produit ne correspond à votre recherche.</p>';
     }
 
     // Pré-sélection de catégorie via l'URL (?cat=laptops)
@@ -133,6 +155,7 @@
 
     catSelect.addEventListener('change', render);
     sortSelect.addEventListener('change', render);
+    searchInput.addEventListener('input', render);
     render();
   });
 </script>
