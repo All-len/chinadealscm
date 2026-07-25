@@ -27,7 +27,9 @@ precotech237/
 ├── js/reviews.js                 → Avis clients avec photos (fiche produit)
 ├── supabase-schema.sql            → Script de création des tables (à exécuter en premier)
 ├── supabase-migration-transport-avis.sql → Poids/volume produits + tarifs transport + avis clients (à exécuter après supabase-schema.sql)
-└── GUIDE-SUPABASE.md              → Pas-à-pas pour créer/configurer votre projet Supabase
+├── supabase-migration-media.sql   → Photos multiples + vidéo produit (à exécuter en 3ème)
+├── GUIDE-SUPABASE.md              → Pas-à-pas pour créer/configurer votre projet Supabase
+└── GUIDE-GITHUB-NETLIFY.md        → Pas-à-pas pour le déploiement automatique (GitHub + Netlify)
 ```
 
 ## 1. Vos coordonnées et votre catalogue vivent maintenant dans Supabase
@@ -50,6 +52,12 @@ Suivez **`GUIDE-SUPABASE.md`** : créer le compte, exécuter `supabase-schema.sq
 const SUPABASE_URL = "https://xxxxxxxxxxxx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJ....................";
 ```
+
+⚠️ **Ne testez jamais en ouvrant un fichier directement (double-clic)** : l'adresse commence alors par `file:///...` et les navigateurs bloquent les appels vers Supabase depuis ce protocole (upload de photos/vidéos notamment). Pour tester en local avant de publier, lancez un petit serveur local depuis le dossier `precotech237` :
+```bash
+python -m http.server 8000
+```
+puis ouvrez `http://localhost:8000` dans votre navigateur. (Node.js : `npx serve` fonctionne aussi si Python n'est pas installé.)
 
 ## 4. Tarification du transport au poids/volume (nouveau)
 Le coût de transport est maintenant calculé automatiquement pour chaque commande :
@@ -96,6 +104,8 @@ Trois façons simples et gratuites/pas chères :
 - **Hébergement classique (cPanel/OVH/Hostinger...)** : envoyez le contenu du dossier dans le répertoire `public_html` via FTP.
 
 Le dossier `precotech237/` que vous déployez contient déjà `js/supabase-config.js` avec vos clés — inutile de reconfigurer quoi que ce soit après le déploiement : produits et coordonnées viendront automatiquement de votre base Supabase.
+
+**Pour ne plus jamais avoir à re-glisser le dossier manuellement**, suivez **`GUIDE-GITHUB-NETLIFY.md`** : une fois connecté à GitHub, chaque modification de code publiée (`git push`) déclenche automatiquement un nouveau déploiement sur Netlify.
 
 ## 9. Nom de domaine
 Une fois hébergé, associez un nom de domaine du type `precotech237.com` ou `.cm` pour plus de crédibilité auprès de vos clients.
