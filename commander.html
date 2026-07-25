@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Passer commande — PrecoTech237</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <nav class="main-nav">
+      <a href="index.html">Accueil</a>
+      <a href="produits.html">Produits</a>
+      <a href="transport.html">Transport</a>
+      <a href="comment-ca-marche.html">Comment ça marche</a>
+      <a href="a-propos.html">À propos</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="commander.html" class="btn btn-outline">Commander</a>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="container breadcrumb">
+  <a href="index.html">Accueil</a><span class="sep">/</span> Commander
+</div>
+
+<section style="padding-top:24px;">
+  <div class="container" style="max-width:720px;">
+    <div class="section-head">
+      <div class="eyebrow">Formulaire de commande</div>
+      <h1>Finalisez votre commande</h1>
+      <p>Remplissez ce formulaire : votre commande sera transmise instantanément sur WhatsApp, avec une copie possible par e-mail.</p>
+    </div>
+
+    <div class="form-card">
+      <div class="form-success" id="form-success"><span class="ic-inline" data-icon="check"></span> Votre commande a bien été envoyée sur WhatsApp. Un conseiller PrecoTech237 vous contactera très prochainement.<br>
+        <a id="send-email-copy" href="#" style="display:inline-block; margin-top:10px; font-weight:700;">📧 Envoyer aussi une copie par e-mail</a>
+      </div>
+
+      <form id="order-form">
+        <div class="two-col">
+          <div class="form-row">
+            <label>Nom complet <span class="req">*</span></label>
+            <input type="text" name="nom" required placeholder="Ex : Jean Mballa">
+          </div>
+          <div class="form-row">
+            <label>Téléphone / WhatsApp <span class="req">*</span></label>
+            <input type="tel" name="telephone" required placeholder="+237 6XX XX XX XX">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>E-mail <span class="req">*</span></label>
+          <input type="email" name="email" required placeholder="vous@email.com">
+        </div>
+
+        <div class="two-col">
+          <div class="form-row">
+            <label>Produit souhaité <span class="req">*</span></label>
+            <input type="text" name="produit" required placeholder="Ex : HP Pavilion 15 i7/16Go/512Go">
+            <input type="hidden" name="produitId" id="produitId-field">
+          </div>
+          <div class="form-row">
+            <label>Quantité <span class="req">*</span></label>
+            <input type="number" name="quantite" min="1" value="1" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Mode de transport <span class="req">*</span></label>
+          <div class="radio-transport" id="transport-radio-group">
+            <label>
+              <input type="radio" name="transport" value="maritime" required>
+              <span>Maritime</span>
+              <span class="meta" data-meta-for="maritime">45 à 60 jours<br>Le plus économique</span>
+            </label>
+            <label>
+              <input type="radio" name="transport" value="aerien-normal" checked>
+              <span>Aérien normal</span>
+              <span class="meta" data-meta-for="aerien-normal">15 à 21 jours<br>Bon équilibre prix/délai</span>
+            </label>
+            <label>
+              <input type="radio" name="transport" value="aerien-express">
+              <span>Aérien express</span>
+              <span class="meta" data-meta-for="aerien-express">7 jours maximum<br>Livraison rapide</span>
+            </label>
+          </div>
+          <div class="transport-estimate" id="order-transport-estimate" style="display:none;"></div>
+        </div>
+
+        <div class="form-row">
+          <label>Adresse de livraison <span class="req">*</span></label>
+          <textarea name="adresse" required placeholder="Ville, quartier, repère..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <label>Message / précisions</label>
+          <textarea name="message" placeholder="Facultatif"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-whatsapp btn-block">Envoyer ma commande</button>
+        <p class="form-note">Votre commande sera transmise instantanément sur WhatsApp et par e-mail. Nous vous recontacterons sous 24h.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>PrecoTech237</h4>
+        <p style="color:#AFC0DC; font-size:.9rem;">Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
+      </div>
+      <div>
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="produits.html">Produits</a></li>
+          <li><a href="transport.html">Transport</a></li>
+          <li><a href="comment-ca-marche.html">Comment ça marche</a></li>
+          <li><a href="a-propos.html">À propos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="commander.html">Passer commande</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><span class="ic-inline" data-icon="phone"></span> +237 6XX XXX XXX</li>
+          <li><span class="ic-inline" data-icon="mail"></span> contact@precotech237.com</li>
+          <li><span class="ic-inline" data-icon="pin"></span> Bafoussam, Cameroun</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PrecoTech237. Tous droits réservés.</span>
+      <span>Paiement à la livraison ou avant expédition, selon accord.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/main.js"></script>
+<script src="js/app-init.js"></script>
+<script src="js/order.js"></script>
+<script>
+  document.addEventListener('sitedata:ready', function(){
+    // Met à jour les libellés de tarif sous chaque mode de transport
+    document.querySelectorAll('#transport-radio-group .meta').forEach(function(el){
+      const modeId = el.getAttribute('data-meta-for');
+      const t = TRANSPORT_MODES.find(m => m.id === modeId);
+      if (!t) return;
+      const montant = Number(t.tarif || 0).toLocaleString('fr-FR');
+      const tarifTxt = t.unite === 'CBM' ? `${montant} FCFA/CBM` : `${montant} FCFA/kg`;
+      el.innerHTML = `${t.delai} · ${tarifTxt}<br>${t.note}`;
+    });
+
+    // Pré-remplissage produit / quantité / transport si arrivée depuis une fiche produit
+    const qtyParam = getUrlParam('qty');
+    const transportParam = getUrlParam('transport');
+    const produitIdParam = getUrlParam('produitId');
+    if (qtyParam) document.querySelector('[name="quantite"]').value = qtyParam;
+    if (transportParam){
+      const radio = document.querySelector(`input[name="transport"][value="${transportParam}"]`);
+      if (radio) radio.checked = true;
+    }
+    if (produitIdParam) document.getElementById('produitId-field').value = produitIdParam;
+
+    // Estimation des frais de transport (seulement possible si on connaît le produit exact)
+    const linkedProduct = produitIdParam ? PRODUCTS.find(p => p.id === produitIdParam) : null;
+    const estimateEl = document.getElementById('order-transport-estimate');
+    const qtyField = document.querySelector('[name="quantite"]');
+
+    function updateEstimate(){
+      if (!linkedProduct){ estimateEl.style.display = 'none'; return; }
+      const checked = document.querySelector('input[name="transport"]:checked');
+      const t = TRANSPORT_MODES.find(m => m.id === (checked ? checked.value : 'aerien-normal'));
+      const qty = Number(qtyField.value) || 1;
+      const frais = calcTransportCost(linkedProduct, t.id, qty);
+      const sousTotal = linkedProduct.prix * qty;
+
+      estimateEl.style.display = 'block';
+      estimateEl.innerHTML = `
+        <div class="line"><span>Sous-total produit (${qty} × ${formatFCFA(linkedProduct.prix)})</span><span>${formatFCFA(sousTotal)}</span></div>
+        <div class="line"><span>Frais de transport estimés (${t.label})</span><span>${formatFCFA(frais)}</span></div>
+        <div class="line total"><span>Total estimé</span><span>${formatFCFA(sousTotal + frais)}</span></div>
+        <small>Estimation indicative, confirmée par un conseiller avant expédition.</small>`;
+    }
+
+    if (linkedProduct){
+      qtyField.addEventListener('change', updateEstimate);
+      document.querySelectorAll('input[name="transport"]').forEach(r => r.addEventListener('change', updateEstimate));
+      updateEstimate();
+    }
+  });
+</script>
+</body>
+</html>

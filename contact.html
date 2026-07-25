@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — PrecoTech237</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <nav class="main-nav">
+      <a href="index.html">Accueil</a>
+      <a href="produits.html">Produits</a>
+      <a href="transport.html">Transport</a>
+      <a href="comment-ca-marche.html">Comment ça marche</a>
+      <a href="a-propos.html">À propos</a>
+      <a href="contact.html" class="active">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="commander.html" class="btn btn-outline">Commander</a>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="container breadcrumb">
+  <a href="index.html">Accueil</a><span class="sep">/</span> Contact
+</div>
+
+<section style="padding-top:24px;">
+  <div class="container" style="display:grid; grid-template-columns:1fr 1.2fr; gap:48px;">
+    <div>
+      <div class="eyebrow">Contact</div>
+      <h1>Parlons de votre projet</h1>
+      <p>Une question sur un produit, un délai de livraison ou votre commande ? Notre équipe vous répond rapidement, de préférence sur WhatsApp.</p>
+
+      <div style="display:flex; flex-direction:column; gap:18px; margin-top:28px;">
+        <div class="card" style="padding:18px 20px; display:flex; align-items:center; gap:14px;">
+          <div class="icon-badge blue" data-icon="chat"></div>
+          <div><b>WhatsApp</b><br><span style="color:var(--slate);">+237 6XX XXX XXX</span></div>
+        </div>
+        <div class="card" style="padding:18px 20px; display:flex; align-items:center; gap:14px;">
+          <div class="icon-badge blue" data-icon="mail"></div>
+          <div><b>E-mail</b><br><span style="color:var(--slate);">contact@precotech237.com</span></div>
+        </div>
+        <div class="card" style="padding:18px 20px; display:flex; align-items:center; gap:14px;">
+          <div class="icon-badge blue" data-icon="pin"></div>
+          <div><b>Localisation</b><br><span style="color:var(--slate);">Bafoussam, Cameroun</span></div>
+        </div>
+      </div>
+
+      <a href="https://wa.me/237600000000" target="_blank" class="btn btn-whatsapp" style="margin-top:24px;">Discuter maintenant sur WhatsApp</a>
+    </div>
+
+    <div class="form-card">
+      <h3>Envoyez-nous un message</h3>
+      <div class="form-success" id="contact-success">Votre message a bien été envoyé. Nous vous répondrons très prochainement.</div>
+      <form id="contact-form">
+        <div class="form-row">
+          <label>Nom complet <span class="req">*</span></label>
+          <input type="text" name="nom" required>
+        </div>
+        <div class="form-row">
+          <label>E-mail <span class="req">*</span></label>
+          <input type="email" name="email" required>
+        </div>
+        <div class="form-row">
+          <label>Téléphone</label>
+          <input type="tel" name="telephone">
+        </div>
+        <div class="form-row">
+          <label>Message <span class="req">*</span></label>
+          <textarea name="message" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Envoyer le message</button>
+        <p class="form-note">Votre message peut aussi être envoyé directement sur WhatsApp pour une réponse plus rapide.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>PrecoTech237</h4>
+        <p style="color:#AFC0DC; font-size:.9rem;">Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
+      </div>
+      <div>
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="produits.html">Produits</a></li>
+          <li><a href="transport.html">Transport</a></li>
+          <li><a href="comment-ca-marche.html">Comment ça marche</a></li>
+          <li><a href="a-propos.html">À propos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="commander.html">Passer commande</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><span class="ic-inline" data-icon="phone"></span> +237 6XX XXX XXX</li>
+          <li><span class="ic-inline" data-icon="mail"></span> contact@precotech237.com</li>
+          <li><span class="ic-inline" data-icon="pin"></span> Bafoussam, Cameroun</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PrecoTech237. Tous droits réservés.</span>
+      <span>Paiement à la livraison ou avant expédition, selon accord.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/main.js"></script>
+<script src="js/app-init.js"></script>
+<script>
+  document.addEventListener('sitedata:ready', function(){
+    document.getElementById('contact-form').addEventListener('submit', function(e){
+      e.preventDefault();
+      const fd = new FormData(this);
+      const texte = `Nouveau message de contact - PrecoTech237\n\nNom : ${fd.get('nom')}\nE-mail : ${fd.get('email')}\nTéléphone : ${fd.get('telephone') || 'Non renseigné'}\n\nMessage :\n${fd.get('message')}`;
+      window.open(`https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(texte)}`, '_blank');
+      document.getElementById('contact-success').classList.add('show');
+      this.reset();
+    });
+  });
+</script>
+</body>
+</html>

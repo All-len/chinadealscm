@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Fiche produit — PrecoTech237</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <nav class="main-nav">
+      <a href="index.html">Accueil</a>
+      <a href="produits.html" class="active">Produits</a>
+      <a href="transport.html">Transport</a>
+      <a href="comment-ca-marche.html">Comment ça marche</a>
+      <a href="a-propos.html">À propos</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="commander.html" class="btn btn-outline">Commander</a>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="container breadcrumb">
+  <a href="index.html">Accueil</a><span class="sep">/</span>
+  <a href="produits.html">Produits</a><span class="sep">/</span>
+  <span id="crumb-name">…</span>
+</div>
+
+<section id="product-root" style="padding-top:8px;"></section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <div class="section-head left">
+      <div class="eyebrow">Suggestions</div>
+      <h2>Produits similaires</h2>
+    </div>
+    <div class="grid-4" id="similar-products"></div>
+  </div>
+</section>
+
+<section>
+  <div class="container" style="max-width:760px;">
+    <div class="section-head left">
+      <div class="eyebrow">Avis clients</div>
+      <h2>Ce qu'en pensent nos clients</h2>
+      <div id="reviews-summary" class="reviews-summary"></div>
+    </div>
+
+    <div id="reviews-list" class="reviews-list"></div>
+
+    <div class="form-card" style="max-width:560px;">
+      <h3>Laisser un avis</h3>
+      <div class="form-success" id="review-success">✓ Merci, votre avis a bien été publié.</div>
+      <form id="review-form">
+        <div class="form-row">
+          <label>Votre nom <span class="req">*</span></label>
+          <input type="text" name="nom" required placeholder="Ex : Jean Mballa">
+        </div>
+        <div class="form-row">
+          <label>Votre note</label>
+          <div class="star-select">
+            <label><input type="radio" name="note" value="5" checked> ★★★★★</label>
+            <label><input type="radio" name="note" value="4"> ★★★★☆</label>
+            <label><input type="radio" name="note" value="3"> ★★★☆☆</label>
+            <label><input type="radio" name="note" value="2"> ★★☆☆☆</label>
+            <label><input type="radio" name="note" value="1"> ★☆☆☆☆</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Votre commentaire</label>
+          <textarea name="commentaire" rows="3" placeholder="Votre expérience avec ce produit..."></textarea>
+        </div>
+        <div class="form-row">
+          <label>Photos (facultatif, 4 maximum)</label>
+          <input type="file" name="photos" accept="image/*" multiple>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Publier mon avis</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>PrecoTech237</h4>
+        <p style="color:#AFC0DC; font-size:.9rem;">Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
+      </div>
+      <div>
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="produits.html">Produits</a></li>
+          <li><a href="transport.html">Transport</a></li>
+          <li><a href="comment-ca-marche.html">Comment ça marche</a></li>
+          <li><a href="a-propos.html">À propos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="commander.html">Passer commande</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><span class="ic-inline" data-icon="phone"></span> +237 6XX XXX XXX</li>
+          <li><span class="ic-inline" data-icon="mail"></span> contact@precotech237.com</li>
+          <li><span class="ic-inline" data-icon="pin"></span> Bafoussam, Cameroun</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PrecoTech237. Tous droits réservés.</span>
+      <span>Paiement à la livraison ou avant expédition, selon accord.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/main.js"></script>
+<script src="js/app-init.js"></script>
+<script src="js/reviews.js"></script>
+<script>
+document.addEventListener('sitedata:ready', function(){
+  const id = getUrlParam('id');
+  const product = PRODUCTS.find(p => p.id === id) || PRODUCTS[0];
+
+  document.title = product.nom + ' — PrecoTech237';
+  document.getElementById('page-title').textContent = product.nom + ' — PrecoTech237';
+  document.getElementById('crumb-name').textContent = product.nom;
+
+  function tarifLabel(t){
+    const montant = Number(t.tarif || 0).toLocaleString('fr-FR');
+    return t.unite === 'CBM' ? `${montant} FCFA/CBM` : `${montant} FCFA/kg`;
+  }
+
+  const transportOptions = TRANSPORT_MODES.map(t => `
+    <label>
+      <input type="radio" name="pd-transport" value="${t.id}" ${t.id==='aerien-normal' ? 'checked':''}>
+      <span>${t.label}</span>
+      <span class="meta">${t.delai} · ${tarifLabel(t)}<br>${t.note}</span>
+    </label>`).join('');
+
+  // Ajoute poids et dimensions carton aux caractéristiques, si renseignés
+  const specsHtml = product.specs.map(s => `<li><span>${s[0]}</span><b>${s[1]}</b></li>`).join('');
+  const poidsHtml = product.poidsKg ? `<li><span>Poids</span><b>${product.poidsKg} kg</b></li>` : '';
+  const dimHtml = (product.longueurCm && product.largeurCm && product.hauteurCm)
+    ? `<li><span>Dimensions carton</span><b>${product.longueurCm} × ${product.largeurCm} × ${product.hauteurCm} cm</b></li>`
+    : '';
+
+  // ---------- Galerie photo ----------
+  const galleryImages = (product.images && product.images.length) ? product.images : null;
+  const mainContent = galleryImages
+    ? `<img src="${galleryImages[0]}" alt="${product.nom}" id="gallery-main-img">`
+    : productIconSVG(product.categorie);
+
+  const thumbsHtml = galleryImages
+    ? galleryImages.map(function(url, i){
+        return `<div class="t${i===0 ? ' active' : ''}" data-src="${url}" style="background-image:url('${url}'); background-size:cover; background-position:center;"></div>`;
+      }).join('')
+    : `<div class="t active"></div><div class="t"></div><div class="t"></div><div class="t"></div>`;
+
+  // ---------- Vidéo produit ----------
+  function videoEmbedHtml(url){
+    if (!url) return '';
+    const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    if (yt){
+      return `<div class="video-wrap"><iframe src="https://www.youtube.com/embed/${yt[1]}" title="Vidéo produit" allowfullscreen loading="lazy"></iframe></div>`;
+    }
+    if (/tiktok\.com/.test(url)){
+      return `<a href="${url}" target="_blank" rel="noopener" class="video-tiktok-link">
+        <span class="icon-badge blue" style="width:40px;height:40px;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v11.5a2.5 2.5 0 1 1-2-2.45V9.9A5.5 5.5 0 1 0 13.5 15V8.2a6.2 6.2 0 0 0 4 1.5V7.1A4.2 4.2 0 0 1 13.9 3H9z"/></svg></span>
+        <span>Voir la vidéo produit sur TikTok</span>
+      </a>`;
+    }
+    if (/\.(mp4|webm|mov)(\?.*)?$/i.test(url)){
+      return `<div class="video-wrap"><video src="${url}" controls preload="metadata"></video></div>`;
+    }
+    return `<a href="${url}" target="_blank" rel="noopener" class="video-tiktok-link"><span>▶ Voir la vidéo produit</span></a>`;
+  }
+  const videoHtml = product.videoUrl
+    ? `<div style="margin-top:20px;"><h3 style="font-size:1rem; margin-bottom:10px;">Vidéo du produit</h3>${videoEmbedHtml(product.videoUrl)}</div>`
+    : '';
+
+  document.getElementById('product-root').innerHTML = `
+  <div class="container product-detail">
+    <div>
+      <div class="gallery-main">${mainContent}</div>
+      <div class="gallery-thumbs">
+        ${thumbsHtml}
+      </div>
+      ${videoHtml}
+    </div>
+    <div>
+      <div class="cat" style="color:var(--slate-light); font-weight:700; text-transform:uppercase; font-size:.78rem;">${product.categorieLabel}</div>
+      <h1 style="font-size:1.7rem;">${product.nom}</h1>
+      <div class="pd-price">${formatFCFA(product.prix)}</div>
+      <div class="pd-ref">Réf. ${product.id.toUpperCase()} · ${product.etat}</div>
+      <p>${product.description}</p>
+
+      <ul class="pd-specs">
+        ${specsHtml}${poidsHtml}${dimHtml}
+      </ul>
+
+      <h3 style="margin-top:24px;">Choisissez votre mode de transport</h3>
+      <div class="radio-transport">${transportOptions}</div>
+
+      <div class="transport-estimate" id="transport-estimate"></div>
+
+      <div class="qty-select">
+        <span style="font-weight:600;">Quantité :</span>
+        <button type="button" onclick="document.getElementById('pd-qty').stepDown()">−</button>
+        <input id="pd-qty" type="number" value="1" min="1" style="width:56px; text-align:center; border:1px solid var(--line); border-radius:8px; padding:6px;">
+        <button type="button" onclick="document.getElementById('pd-qty').stepUp()">+</button>
+      </div>
+
+      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:8px;">
+        <a id="pd-order-btn" href="#" class="btn btn-primary">Commander maintenant</a>
+        <a id="pd-wa-btn" href="#" target="_blank" class="btn btn-whatsapp">Commander via WhatsApp</a>
+      </div>
+
+      <div class="reassurance">
+        <span>Produit vérifié avant expédition</span>
+        <span>Suivi de commande disponible</span>
+        <span>Support après-vente PrecoTech237</span>
+      </div>
+    </div>
+  </div>`;
+
+  // Changement de photo principale au clic sur une miniature
+  if (galleryImages){
+    document.querySelectorAll('.gallery-thumbs .t').forEach(function(thumb){
+      thumb.addEventListener('click', function(){
+        document.querySelectorAll('.gallery-thumbs .t').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+        document.getElementById('gallery-main-img').src = thumb.dataset.src;
+      });
+    });
+  }
+
+  // Bouton "Commander maintenant" → page commander.html pré-remplie
+  function currentTransport(){
+    const checked = document.querySelector('input[name="pd-transport"]:checked');
+    return TRANSPORT_MODES.find(t => t.id === (checked ? checked.value : 'aerien-normal'));
+  }
+
+  function updateCTAs(){
+    const qty = document.getElementById('pd-qty').value;
+    const t = currentTransport();
+
+    document.getElementById('pd-order-btn').href =
+      `commander.html?produitId=${encodeURIComponent(product.id)}&produit=${encodeURIComponent(product.nom)}&qty=${qty}&transport=${t.id}`;
+
+    const texte = `Bonjour PrecoTech237, je souhaite commander :\n` +
+      `Produit : ${product.nom}\nQuantité : ${qty}\nTransport souhaité : ${t.label} (${t.delai})`;
+    document.getElementById('pd-wa-btn').href = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(texte)}`;
+
+    // Estimation des frais de transport selon poids/volume du produit
+    const estimateEl = document.getElementById('transport-estimate');
+    if (product.poidsKg || (product.longueurCm && product.largeurCm && product.hauteurCm)){
+      const frais = calcTransportCost(product, t.id, qty);
+      const sousTotal = product.prix * qty;
+      const detailUnite = t.unite === 'CBM'
+        ? `${calcCBM(product).toFixed(4)} CBM × ${qty} × ${Number(t.tarif).toLocaleString('fr-FR')} FCFA`
+        : `${product.poidsKg} kg × ${qty} × ${Number(t.tarif).toLocaleString('fr-FR')} FCFA`;
+
+      estimateEl.innerHTML = `
+        <div class="line"><span>Sous-total produit (${qty} × ${formatFCFA(product.prix)})</span><span>${formatFCFA(sousTotal)}</span></div>
+        <div class="line"><span>Frais de transport estimés (${t.label})</span><span>${formatFCFA(frais)}</span></div>
+        <div class="line total"><span>Total estimé</span><span>${formatFCFA(sousTotal + frais)}</span></div>
+        <small>Détail transport : ${detailUnite}. Estimation indicative, confirmée par un conseiller avant expédition.</small>`;
+    } else {
+      estimateEl.innerHTML = `<small>Poids/volume non renseignés pour ce produit — le tarif de transport exact vous sera confirmé par WhatsApp.</small>`;
+    }
+  }
+  document.getElementById('pd-qty').addEventListener('change', updateCTAs);
+  document.querySelectorAll('input[name="pd-transport"]').forEach(r => r.addEventListener('change', updateCTAs));
+  updateCTAs();
+
+  // Produits similaires (même catégorie)
+  const similar = PRODUCTS.filter(p => p.categorie === product.categorie && p.id !== product.id).slice(0,4);
+  document.getElementById('similar-products').innerHTML = similar.map(productCardHTML).join('') || '<p>Aucun autre produit dans cette catégorie pour le moment.</p>';
+});
+</script>
+</body>
+</html>

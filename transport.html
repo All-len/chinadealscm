@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nos modes de transport — PrecoTech237</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <nav class="main-nav">
+      <a href="index.html">Accueil</a>
+      <a href="produits.html">Produits</a>
+      <a href="transport.html" class="active">Transport</a>
+      <a href="comment-ca-marche.html">Comment ça marche</a>
+      <a href="a-propos.html">À propos</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="commander.html" class="btn btn-outline">Commander</a>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="container breadcrumb">
+  <a href="index.html">Accueil</a><span class="sep">/</span> Transport
+</div>
+
+<section style="padding-top:24px;">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Livraison</div>
+      <h1>Nos modes de transport depuis la Chine</h1>
+      <p>Chez PrecoTech237, vous choisissez le mode d'acheminement qui correspond à votre budget et à vos délais. Chaque commande est suivie de bout en bout, quel que soit le mode choisi.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card reveal transport-card sea">
+        <h3><span class="ic-inline" data-icon="ship"></span> Maritime</h3>
+        <div class="days">45-60 <span>jours</span></div>
+        <div class="tarif-line" id="tarif-maritime" style="font-weight:700; color:var(--navy); margin-top:6px;"></div>
+        <ul>
+          <li>Le mode le plus économique</li>
+          <li>Idéal pour les grosses commandes ou le matériel volumineux</li>
+          <li>Suivi de conteneur disponible</li>
+        </ul>
+      </div>
+      <div class="card reveal transport-card">
+        <h3><span class="ic-inline" data-icon="plane"></span> Aérien normal</h3>
+        <div class="days">15-21 <span>jours</span></div>
+        <div class="tarif-line" id="tarif-aerien-normal" style="font-weight:700; color:var(--navy); margin-top:6px;"></div>
+        <ul>
+          <li>Bon équilibre entre coût et rapidité</li>
+          <li>Recommandé pour la majorité des commandes</li>
+          <li>Suivi par numéro de tracking</li>
+        </ul>
+      </div>
+      <div class="card reveal transport-card express">
+        <h3><span class="ic-inline" data-icon="bolt"></span> Aérien express</h3>
+        <div class="days">7 <span>jours maximum</span></div>
+        <div class="tarif-line" id="tarif-aerien-express" style="font-weight:700; color:var(--navy); margin-top:6px;"></div>
+        <ul>
+          <li>Livraison rapide pour vos besoins urgents</li>
+          <li>Tarif plus élevé, priorité à l'expédition</li>
+          <li>Suivi en temps réel</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <div class="section-head left">
+      <div class="eyebrow">Comparatif</div>
+      <h2>Quel mode choisir ?</h2>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; background:#fff;">
+        <thead>
+          <tr style="background:var(--off-white); text-align:left;">
+            <th style="padding:14px; font-family:'Sora',sans-serif;">Mode</th>
+            <th style="padding:14px; font-family:'Sora',sans-serif;">Délai</th>
+            <th style="padding:14px; font-family:'Sora',sans-serif;">Tarif</th>
+            <th style="padding:14px; font-family:'Sora',sans-serif;">Avantage</th>
+            <th style="padding:14px; font-family:'Sora',sans-serif;">Idéal pour</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--line);">
+            <td style="padding:14px;">Maritime</td>
+            <td style="padding:14px;">45 à 60 jours</td>
+            <td style="padding:14px;" id="table-tarif-maritime">—</td>
+            <td style="padding:14px;">Coût le plus bas</td>
+            <td style="padding:14px;">Grosses quantités, achats sans urgence</td>
+          </tr>
+          <tr style="border-top:1px solid var(--line);">
+            <td style="padding:14px;">Aérien normal</td>
+            <td style="padding:14px;">15 à 21 jours</td>
+            <td style="padding:14px;" id="table-tarif-aerien-normal">—</td>
+            <td style="padding:14px;">Bon compromis</td>
+            <td style="padding:14px;">La majorité des commandes</td>
+          </tr>
+          <tr style="border-top:1px solid var(--line);">
+            <td style="padding:14px;">Aérien express</td>
+            <td style="padding:14px;">7 jours maximum</td>
+            <td style="padding:14px;" id="table-tarif-aerien-express">—</td>
+            <td style="padding:14px;">Rapidité maximale</td>
+            <td style="padding:14px;">Besoin urgent, revente rapide</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="form-note" style="text-align:left; margin-top:10px;">Tarifs indicatifs : aérien facturé au poids (FCFA/kg), maritime facturé au volume (FCFA/CBM). Le montant exact dépend du poids et des dimensions de chaque article — calculé automatiquement sur chaque fiche produit.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-head left">
+      <div class="eyebrow">Questions fréquentes</div>
+      <h2>FAQ Transport</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal" style="padding:22px;">
+        <h3>Puis-je suivre ma commande ?</h3>
+        <p>Oui, un numéro de suivi vous est communiqué dès l'expédition, quel que soit le mode choisi.</p>
+      </div>
+      <div class="card reveal" style="padding:22px;">
+        <h3>Que se passe-t-il en cas de douane ?</h3>
+        <p>Les formalités douanières sont prises en compte dans notre processus. Nous vous accompagnons à chaque étape.</p>
+      </div>
+      <div class="card reveal" style="padding:22px;">
+        <h3>Et en cas de casse ou de perte ?</h3>
+        <p>Chaque produit est vérifié avant expédition et un accompagnement est prévu en cas d'incident de transport.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <h2>Une question sur le transport de votre commande ?</h2>
+    <p>Notre équipe vous répond directement sur WhatsApp.</p>
+    <a href="https://wa.me/237600000000" target="_blank" class="btn btn-whatsapp">Discuter sur WhatsApp</a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>PrecoTech237</h4>
+        <p style="color:#AFC0DC; font-size:.9rem;">Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
+      </div>
+      <div>
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="produits.html">Produits</a></li>
+          <li><a href="transport.html">Transport</a></li>
+          <li><a href="comment-ca-marche.html">Comment ça marche</a></li>
+          <li><a href="a-propos.html">À propos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="commander.html">Passer commande</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><span class="ic-inline" data-icon="phone"></span> +237 6XX XXX XXX</li>
+          <li><span class="ic-inline" data-icon="mail"></span> contact@precotech237.com</li>
+          <li><span class="ic-inline" data-icon="pin"></span> Bafoussam, Cameroun</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PrecoTech237. Tous droits réservés.</span>
+      <span>Paiement à la livraison ou avant expédition, selon accord.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/main.js"></script>
+<script src="js/app-init.js"></script>
+<script>
+  document.addEventListener('sitedata:ready', function(){
+    TRANSPORT_MODES.forEach(function(t){
+      const el = document.getElementById('tarif-' + t.id);
+      if (!el) return;
+      const montant = Number(t.tarif || 0).toLocaleString('fr-FR');
+      el.textContent = t.unite === 'CBM' ? `${montant} FCFA / CBM` : `${montant} FCFA / kg`;
+    });
+  });
+</script>
+</body>
+</html>
