@@ -1,16 +1,14 @@
 /* =========================================================
    PrecoTech237 — Espace administrateur (branché sur Supabase)
    ---------------------------------------------------------
-   IMPORTANT : le code d'accès ci-dessous s'exécute dans le
-   navigateur du visiteur : ce n'est PAS une vraie sécurité
-   (n'importe qui peut lire le code source). Il sert seulement à
-   décourager un client qui tomberait par hasard sur cette page.
-   Les données restent protégées côté Supabase par les règles RLS
-   définies dans supabase-schema.sql. Pour une vraie authentification
-   (comptes, rôles), Supabase Auth peut être ajouté plus tard.
+   Authentification : vrai compte Supabase Auth (e-mail + mot de
+   passe), créé depuis Supabase > Authentication > Users > Add user.
+   La session est gérée automatiquement par supabaseClient (jeton
+   stocké de façon sécurisée, envoyé à chaque requête). Les règles
+   de sécurité réelles sont définies côté Supabase dans
+   supabase-migration-auth.sql — c'est cette configuration côté
+   serveur qui protège vos données, pas ce fichier.
    ========================================================= */
-
-const ADMIN_PASSWORD = "precotech2026"; // ⚠️ changez ce code
 
 let adminProducts = [];
 let adminContact = {};
@@ -36,21 +34,42 @@ async function loadAdminData(){
   }
 }
 
-/* ---------- Accès (code léger, voir avertissement ci-dessus) ---------- */
-document.addEventListener('DOMContentLoaded', function(){
-  const unlocked = sessionStorage.getItem('precotech237_admin_unlocked') === '1';
-  if (unlocked){ showAdminApp(); }
+/* ---------- Connexion / déconnexion (Supabase Auth) ---------- */
+document.addEventListener('DOMContentLoaded', async function(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session){ showAdminApp(); }
 
-  document.getElementById('lock-form').addEventListener('submit', function(e){
+  document.getElementById('lock-form').addEventListener('submit', async function(e){
     e.preventDefault();
-    const val = document.getElementById('lock-password').value;
-    if (val === ADMIN_PASSWORD){
-      sessionStorage.setItem('precotech237_admin_unlocked', '1');
-      showAdminApp();
-    } else {
-      document.getElementById('lock-error').style.display = 'block';
+    const email = document.getElementById('lock-email').value.trim();
+    const password = document.getElementById('lock-password').value;
+    const errorEl = document.getElementById('lock-error');
+    const submitBtn = document.getElementById('lock-submit');
+
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Connexion...';
+
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Se connecter';
+
+    if (error){
+      errorEl.textContent = 'Connexion impossible : e-mail ou mot de passe incorrect.';
+      errorEl.style.display = 'block';
+      return;
     }
+    showAdminApp();
   });
+
+  const logoutBtn = document.getElementById('btn-logout');
+  if (logoutBtn){
+    logoutBtn.addEventListener('click', async function(){
+      await supabaseClient.auth.signOut();
+      window.location.reload();
+    });
+  }
 });
 
 async function showAdminApp(){

@@ -28,7 +28,9 @@ precotech237/
 ├── supabase-schema.sql            → Script de création des tables (à exécuter en premier)
 ├── supabase-migration-transport-avis.sql → Poids/volume produits + tarifs transport + avis clients (à exécuter après supabase-schema.sql)
 ├── supabase-migration-media.sql   → Photos multiples + vidéo produit (à exécuter en 3ème)
+├── supabase-migration-auth.sql    → Vraie authentification admin (à exécuter en 4ème)
 ├── GUIDE-SUPABASE.md              → Pas-à-pas pour créer/configurer votre projet Supabase
+├── GUIDE-AUTH.md                  → Pas-à-pas pour créer votre compte administrateur sécurisé
 └── GUIDE-GITHUB-NETLIFY.md        → Pas-à-pas pour le déploiement automatique (GitHub + Netlify)
 ```
 
@@ -38,13 +40,15 @@ Vous n'éditez plus `js/data.js` à la main : tout se gère depuis **`admin.html
 ## 2. Espace administrateur — ajouter/modifier/supprimer produits et coordonnées
 Ouvrez **`admin.html`** dans votre navigateur.
 
-- Code d'accès par défaut : **`precotech2026`** — changez-le dès que possible en modifiant la ligne `ADMIN_PASSWORD` tout en haut du fichier `js/admin.js`.
-- Onglet **Produits** : ajouter, modifier, supprimer (nom, catégorie, prix, état, badge, description, caractéristiques techniques).
+- Connexion avec un **vrai compte** (e-mail + mot de passe) créé dans Supabase Auth — voir **`GUIDE-AUTH.md`** pour la mise en place (à faire une seule fois).
+- Onglet **Produits** : ajouter, modifier, supprimer (nom, catégorie, prix, état, badge, description, caractéristiques, photos, vidéo).
 - Onglet **Informations du site** : numéro WhatsApp, téléphone, e-mail, ville.
+- Onglet **Tarifs transport** : FCFA/kg (aérien) et FCFA/CBM (maritime).
+- Onglet **Avis clients** : modération (suppression) des avis publiés par vos visiteurs.
 
 Chaque clic sur "Enregistrer" écrit directement dans votre base Supabase : **le changement est visible instantanément par tous vos visiteurs**, sans rien télécharger ni remplacer.
 
-⚠️ **Sécurité — à bien comprendre** : le code d'accès de `admin.html` est une protection légère côté navigateur, pas une vraie authentification serveur. Les vraies règles de protection de la base sont dans `supabase-schema.sql` (Row Level Security). Ne partagez jamais votre clé Supabase `service_role` (différente de la clé `anon public` utilisée ici) — elle donne un accès total sans restriction à votre base. Pour une authentification plus robuste (comptes utilisateurs, rôles), Supabase Auth peut être ajouté plus tard sans tout reconstruire.
+✅ **Sécurité** : seules les personnes connectées avec un compte administrateur (créé dans Supabase Auth) peuvent écrire ou supprimer des données — la protection est appliquée côté serveur (Supabase), pas seulement par un mot de passe côté site. Ne partagez jamais votre clé Supabase `service_role` (différente de la clé `anon public` utilisée sur le site) — elle donne un accès total sans restriction à votre base, en contournant toute règle de sécurité.
 
 ## 3. Configurer votre propre base Supabase (si ce n'est pas déjà fait)
 Suivez **`GUIDE-SUPABASE.md`** : créer le compte, exécuter `supabase-schema.sql`, récupérer votre Project URL et votre clé `anon public`, puis les coller dans `js/supabase-config.js` :
@@ -112,7 +116,6 @@ Une fois hébergé, associez un nom de domaine du type `precotech237.com` ou `.c
 
 ## 10. Prochaines améliorations possibles
 - Ajouter Formspree ou EmailJS pour l'envoi d'e-mail 100% automatique.
-- Ajouter Supabase Auth pour une vraie authentification (comptes admin sécurisés).
 - Ajouter Google Analytics pour suivre les visites.
 - Ajouter un espace "Suivi de commande" pour vos clients (une nouvelle table Supabase `orders` suffirait).
 - Ajouter de vraies photos via Supabase Storage (voir point 4).
