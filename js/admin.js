@@ -112,7 +112,7 @@ function renderProductTable(){
   document.getElementById('product-count').textContent = adminProducts.length;
 
   if (!adminProducts.length){
-    tbody.innerHTML = '<tr><td colspan="5">Aucun produit pour le moment. Cliquez sur « Ajouter un produit ».</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Aucun produit pour le moment. Cliquez sur « Ajouter un produit ».</td></tr>';
     return;
   }
 
@@ -123,12 +123,12 @@ function renderProductTable(){
       ? `${p.poidsKg} kg${(p.longueurCm && p.largeurCm && p.hauteurCm) ? ` · ${calcCBM(p).toFixed(3)} CBM` : ''}`
       : '—';
     return `<tr>
-      <td><b>${escapeHtml(p.nom)}</b></td>
-      <td>${catLabels[p.categorie] || p.categorie}</td>
-      <td>${Number(p.prix).toLocaleString('fr-FR')} FCFA</td>
-      <td>${poidsVol}</td>
-      <td>${p.badge ? escapeHtml(p.badge) : '—'}</td>
-      <td>
+      <td data-label="Produit"><b>${escapeHtml(p.nom)}</b></td>
+      <td data-label="Catégorie">${catLabels[p.categorie] || p.categorie}</td>
+      <td data-label="Prix">${Number(p.prix).toLocaleString('fr-FR')} FCFA</td>
+      <td data-label="Poids / Volume">${poidsVol}</td>
+      <td data-label="Badge">${p.badge ? escapeHtml(p.badge) : '—'}</td>
+      <td data-label="Actions">
         <div class="row-actions">
           <button class="edit" data-action="edit" data-id="${p.id}">Modifier</button>
           <button class="danger" data-action="delete" data-id="${p.id}">Supprimer</button>
@@ -418,13 +418,13 @@ function renderReviewTable(){
     const date = r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '';
 
     return `<tr>
-      <td>${escapeHtml(product ? product.nom : r.product_id)}</td>
-      <td>${escapeHtml(r.nom)}</td>
-      <td style="color:#F5A623; letter-spacing:1px;">${stars}</td>
-      <td style="max-width:220px;">${escapeHtml(r.commentaire || '—')}</td>
-      <td><div style="display:flex; gap:4px; flex-wrap:wrap;">${photosHtml || '—'}</div></td>
-      <td>${date}</td>
-      <td><button class="danger" data-action="delete-review" data-id="${r.id}">Supprimer</button></td>
+      <td data-label="Produit">${escapeHtml(product ? product.nom : r.product_id)}</td>
+      <td data-label="Client">${escapeHtml(r.nom)}</td>
+      <td data-label="Note" style="color:#F5A623; letter-spacing:1px;">${stars}</td>
+      <td data-label="Commentaire">${escapeHtml(r.commentaire || '—')}</td>
+      <td data-label="Photos"><div style="display:flex; gap:4px; flex-wrap:wrap;">${photosHtml || '—'}</div></td>
+      <td data-label="Date">${date}</td>
+      <td data-label="Actions"><button class="danger" data-action="delete-review" data-id="${r.id}">Supprimer</button></td>
     </tr>`;
   }).join('');
 
