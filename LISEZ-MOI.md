@@ -115,7 +115,15 @@ Le dossier `precotech237/` que vous déployez contient déjà `js/supabase-confi
 Une fois hébergé, associez un nom de domaine du type `precotech237.com` ou `.cm` pour plus de crédibilité auprès de vos clients.
 
 ## 10. Prochaines améliorations possibles
-- Ajouter Formspree ou EmailJS pour l'envoi d'e-mail 100% automatique.
-- Ajouter Google Analytics pour suivre les visites.
-- Ajouter un espace "Suivi de commande" pour vos clients (une nouvelle table Supabase `orders` suffirait).
-- Ajouter de vraies photos via Supabase Storage (voir point 4).
+
+**Déjà fait** (ne plus proposer) : photos/vidéos produits, Google Analytics (script prêt, ID à renseigner), recherche catalogue, indicateur de stock, note moyenne, favicon, image de partage, robots.txt/sitemap, pages FAQ/Garantie/Mentions légales, responsive complet (site + admin), palette de couleurs alignée sur le logo.
+
+**Encore à faire, par ordre d'impact suggéré :**
+- **Nom de domaine personnalisé** (`precotech237.com` / `.cm`) — pas encore acheté/connecté
+- **GitHub + déploiement automatique** — dépôt Git préparé dans le dossier, connexion à Netlify pas encore faite
+- **Paiement Mobile Money en ligne** (MTN MoMo / Orange Money) — actuellement le paiement se négocie par WhatsApp ; une vraie intégration permettrait un paiement immédiat depuis le site
+- **E-mail 100% automatique** (Formspree/EmailJS) — actuellement le client doit cliquer pour envoyer (mailto)
+- **Suivi de commande pour les clients** (table Supabase `orders` + statut) — actuellement les commandes ne sont pas enregistrées dans la base, seulement transmises par WhatsApp/e-mail
+- **Indexation Google** (Search Console) — pour apparaître en cherchant "PrecoTech237" ou "China Deals CM"
+- **Version anglaise du site** — utile pour une partie de la clientèle camerounaise bilingue
+- **2FA sur le compte Netlify** et renommage de `admin.html` — protections légères supplémentaires
