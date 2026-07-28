@@ -68,7 +68,7 @@ create policy "Suppression vidéos produits (admin connecté)" on storage.object
 --    ajoute sa photo sans compte), seule la SUPPRESSION (modération
 --    d'une photo inappropriée) devient réservée
 -- ---------------------------------------------------------
-drop policy if exists "Suppression des photos d'avis (admin)" on storage.objects;
+drop policy if exists "Suppression photos avis (admin)" on storage.objects;
 
 create policy "Suppression photos avis (admin connecté)" on storage.objects
   for delete using (bucket_id = 'review-photos' and auth.role() = 'authenticated');
