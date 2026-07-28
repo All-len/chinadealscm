@@ -85,7 +85,7 @@ section{ padding: 72px 0; }
 /* Header */
 header.site-header{
   position: sticky; top:0; z-index: 100;
-  background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+  background: rgba(255,255,255,.96);
   border-bottom:1px solid var(--line);
 }
 .nav-row{ display:flex; align-items:center; justify-content:space-between; padding: 16px 0; }
