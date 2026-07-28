@@ -13,6 +13,14 @@ document.addEventListener('DOMContentLoaded', function(){
   if (burger && nav){
     burger.addEventListener('click', function(){
       nav.classList.toggle('open');
+      burger.classList.toggle('open');
+    });
+    // Referme le menu automatiquement quand on clique un lien (évite de rester bloqué dessus)
+    nav.querySelectorAll('a').forEach(function(link){
+      link.addEventListener('click', function(){
+        nav.classList.remove('open');
+        burger.classList.remove('open');
+      });
     });
   }
 });
@@ -91,9 +99,9 @@ function productCardHTML(p){
 
 function productIconSVG(categorie){
   const icons = {
-    'laptops': `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C0272D" stroke-width="1.5"><rect x="4" y="4" width="16" height="10" rx="1"/><path d="M2 18h20l-1.5-2H3.5L2 18z"/></svg>`,
-    'pc-gaming': `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C0272D" stroke-width="1.5"><rect x="3" y="5" width="18" height="12" rx="1"/><path d="M8 20h8M12 17v3"/><circle cx="8" cy="11" r="1"/><circle cx="16" cy="11" r="1"/></svg>`,
-    'telephones': `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C0272D" stroke-width="1.5"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>`
+    'laptops': `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#E0262C" stroke-width="1.5"><rect x="4" y="4" width="16" height="10" rx="1"/><path d="M2 18h20l-1.5-2H3.5L2 18z"/></svg>`,
+    'pc-gaming': `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#E0262C" stroke-width="1.5"><rect x="3" y="5" width="18" height="12" rx="1"/><path d="M8 20h8M12 17v3"/><circle cx="8" cy="11" r="1"/><circle cx="16" cy="11" r="1"/></svg>`,
+    'telephones': `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#E0262C" stroke-width="1.5"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>`
   };
   return icons[categorie] || icons['laptops'];
 }

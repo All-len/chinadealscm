@@ -10,11 +10,11 @@
 :root{
   --navy: #1C1310;
   --navy-2: #34201A;
-  --blue: #C0272D;
+  --blue: #E0262C;
   --green: #1F9D55;
   --green-dark: #157A41;
-  --gold: #E8A317;
-  --gold-dark: #B9800E;
+  --gold: #F5A800;
+  --gold-dark: #C27C00;
   --whatsapp: #25D366;
   --ink: #18120F;
   --slate: #5B6472;
@@ -96,16 +96,29 @@ nav.main-nav a{ color: var(--ink); font-weight:600; font-size:.93rem; }
 nav.main-nav a:hover{ color: var(--blue); }
 nav.main-nav a.active{ color: var(--green-dark); }
 .nav-cta{ display:flex; align-items:center; gap:12px; }
-.burger{ display:none; background:none; border:none; cursor:pointer; }
-.burger span{ display:block; width:24px; height:2px; background:var(--navy); margin:5px 0; }
+.burger{ display:none; background:none; border:none; cursor:pointer; padding:6px; z-index:210; position:relative; }
+.burger span{ display:block; width:24px; height:2px; background:var(--navy); margin:5px 0; border-radius:2px; transition: transform .2s ease, opacity .2s ease; }
+.burger.open span:nth-child(1){ transform: translateY(7px) rotate(45deg); }
+.burger.open span:nth-child(2){ opacity:0; }
+.burger.open span:nth-child(3){ transform: translateY(-7px) rotate(-45deg); }
 
 @media (max-width: 860px){
+  .burger{ display:block; }
   nav.main-nav{
-    position:fixed; inset: 68px 0 0 0; background:#fff; flex-direction:column;
-    padding: 32px 24px; gap:20px; transform: translateX(100%); transition: transform .25s ease;
+    position:fixed; inset: 68px 0 0 0; background:#fff; flex-direction:column; align-items:stretch;
+    padding: 12px 0 24px; gap:0; transform: translateX(100%); transition: transform .25s ease;
+    overflow-y:auto; z-index:150; box-shadow: -8px 0 30px rgba(0,0,0,.12);
   }
   nav.main-nav.open{ transform: translateX(0); }
-  .burger{ display:block; }
+  nav.main-nav a{
+    padding:16px 24px; border-bottom:1px solid var(--line); font-size:1rem; width:100%;
+  }
+  nav.main-nav a::after{ display:none; }
+  nav.main-nav a.active{ background: var(--off-white); color: var(--blue); font-weight:800; }
+  nav.main-nav .mobile-cta{
+    display:flex; margin:20px 24px 0; padding:14px 20px; background: var(--blue); color:#fff;
+    border-radius:8px; font-family:'Sora',sans-serif; font-weight:700; justify-content:center;
+  }
   .nav-cta .btn-outline{ display:none; }
 }
 
@@ -401,6 +414,16 @@ nav.main-nav a:hover::after, nav.main-nav a.active::after{ width:100%; }
   .transport-strip-item{ width:100%; border-bottom:1px dashed var(--line); }
   .transport-strip-more{ align-self:flex-end; }
 }
+/* Pastilles de filtre catégorie (accueil) */
+.cat-pills{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px; }
+.cat-pills .pill{
+  font-family:'Sora',sans-serif; font-weight:700; font-size:.86rem; color: var(--navy);
+  background:#fff; border:1.5px solid var(--line); border-radius:30px; padding:10px 20px;
+  cursor:pointer; transition: all .15s ease;
+}
+.cat-pills .pill:hover{ border-color: var(--blue); color: var(--blue); }
+.cat-pills .pill.active{ background: var(--navy); border-color: var(--navy); color:#fff; }
+
 .mt-0{margin-top:0;} .text-center{text-align:center;}
 .tag-list{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .tag{ background: var(--off-white); border:1px solid var(--line); font-size:.75rem; padding:4px 10px; border-radius:20px; color: var(--slate); }
