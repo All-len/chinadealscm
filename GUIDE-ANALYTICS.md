@@ -14,7 +14,7 @@ Google Analytics te permet de voir combien de visiteurs viennent sur ton site, q
 ## Étape 2 — Créer un flux de données pour ton site web
 
 1. Choisis **"Web"** comme plateforme
-2. URL du site : `https://chinadealscm.netlify.app` (ou ton nom de domaine si tu l'as déjà connecté)
+2. URL du site : `https://precotechcm.netlify.app` (ou ton nom de domaine si tu l'as déjà connecté)
 3. Nom du flux : `Site PrecoTech237`
 4. Clique sur **"Créer le flux"**
 
