@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Espace administrateur — PrecoTech</title>
+<title>Espace administrateur — PrecoTech237</title>
 <link rel="icon" type="image/png" href="images/favicon-32.png">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
@@ -125,7 +125,7 @@
 <div id="admin-app">
   <header class="admin-header">
     <div class="container">
-      <a href="index.html" class="logo"><span class="dot"></span> PrecoTech </a>
+      <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
       <div class="header-actions">
         <span class="badge-role">Espace administrateur</span>
         <a href="index.html" class="btn btn-outline-white" style="padding:8px 16px; font-size:.85rem;">Voir le site</a>
@@ -137,17 +137,52 @@
   <section style="padding-top:32px;">
     <div class="container">
 
-    
+      <div class="banner-info" style="background:rgba(31,157,85,.08); border-color:#B7E4C7; color:var(--green-dark);">
+        ✅ Ce site est connecté à une vraie base de données (Supabase). Toute modification ici (ajout, édition, suppression de produit, changement de coordonnées) est <b>immédiatement visible par tous vos clients</b> — aucun fichier à télécharger ni à remplacer.
+      </div>
 
       <div class="admin-tabs">
-        <button class="active" data-tab="produits">Produits</button>
+        <button class="active" data-tab="commandes">Commandes</button>
+        <button data-tab="produits">Produits</button>
         <button data-tab="contact">Informations du site</button>
         <button data-tab="transport">Tarifs transport</button>
         <button data-tab="avis">Avis clients</button>
       </div>
 
+      <!-- ONGLET COMMANDES -->
+      <div id="tab-commandes" class="tab-panel">
+        <div class="panel-head">
+          <h2 style="margin:0;">Commandes (<span id="order-count">0</span>)</h2>
+          <select id="order-filter-statut" style="padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-size:.85rem;">
+            <option value="">Toutes les commandes</option>
+            <option value="en_attente">En attente</option>
+            <option value="confirmee">Confirmée</option>
+            <option value="expediee">Expédiée</option>
+            <option value="livree">Livrée</option>
+            <option value="annulee">Annulée</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Produit</th>
+                <th>Qté</th>
+                <th>Transport</th>
+                <th>Total estimé</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="order-tbody"><tr><td colspan="8">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ONGLET PRODUITS -->
-      <div id="tab-produits" class="tab-panel">
+      <div id="tab-produits" class="tab-panel" style="display:none;">
         <div class="panel-head">
           <h2 style="margin:0;">Catalogue (<span id="product-count">0</span> produits)</h2>
           <button class="btn btn-primary" id="btn-new-product">+ Ajouter un produit</button>
@@ -172,10 +207,10 @@
       <!-- ONGLET INFOS CONTACT -->
       <div id="tab-contact" class="tab-panel" style="display:none;">
         <h2>Informations de contact</h2>
-        <p>Ces informations sont utilisées automatiquement partout sur le site.</p>
+        <p>Ces informations sont utilisées automatiquement partout sur le site (bouton WhatsApp, pied de page, formulaire de commande).</p>
         <div class="form-card" style="max-width:520px;">
           <div class="form-row">
-            <label>Numéro WhatsApp</label>
+            <label>Numéro WhatsApp (format international, sans le +)</label>
             <input type="text" id="c-whatsapp" placeholder="237600000000">
           </div>
           <div class="form-row">
@@ -184,7 +219,7 @@
           </div>
           <div class="form-row">
             <label>E-mail</label>
-            <input type="email" id="c-email" placeholder="contact@precotech.com">
+            <input type="email" id="c-email" placeholder="contact@precotech237.com">
           </div>
           <div class="form-row">
             <label>Ville / localisation</label>
@@ -241,6 +276,17 @@
 
     </div>
   </section>
+</div>
+
+<!-- MODALE DÉTAILS COMMANDE -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal-box">
+    <h3>Détails de la commande</h3>
+    <div id="order-detail-content" style="font-size:.92rem; line-height:1.9;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" id="btn-close-order-modal">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODALE AJOUT / MODIFICATION PRODUIT -->

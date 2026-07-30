@@ -71,7 +71,8 @@ document.addEventListener('sitedata:ready', function(){
 
     const texte = buildOrderMessage(data);
 
-    // 1) Ouvre WhatsApp avec le message prérempli
+    // 1) Ouvre WhatsApp immédiatement (synchrone, pour éviter que le navigateur
+    //    bloque la pop-up si on attendait la réponse de la base de données avant)
     const waUrl = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(texte)}`;
     window.open(waUrl, '_blank');
 
@@ -79,6 +80,34 @@ document.addEventListener('sitedata:ready', function(){
     const mailUrl = `mailto:${CONTACT.email}?subject=${encodeURIComponent('Nouvelle commande - PrecoTech237')}&body=${encodeURIComponent(texte)}`;
     const emailBtn = document.getElementById('send-email-copy');
     if (emailBtn) emailBtn.href = mailUrl;
+
+    // 3) Enregistre la commande dans Supabase pour qu'elle apparaisse dans
+    //    l'espace admin (onglet "Commandes"), avec un statut modifiable.
+    //    Se fait en arrière-plan : si ça échoue (ex: pas de réseau), la
+    //    commande reste tout de même transmise via WhatsApp/e-mail ci-dessus.
+    let coutProduit = null, coutTransport = null, coutTotal = null;
+    if (linkedProduct && transportMode){
+      coutProduit = linkedProduct.prix * (Number(quantite) || 1);
+      coutTransport = calcTransportCost(linkedProduct, transportMode.id, quantite);
+      coutTotal = coutProduit + (coutTransport || 0);
+    }
+    supabaseClient.from('orders').insert({
+      nom: data.nom,
+      telephone: data.telephone,
+      email: data.email,
+      produit_id: produitId || null,
+      produit_nom: data.produit,
+      quantite: Number(quantite) || 1,
+      transport_id: transportMode ? transportMode.id : null,
+      transport_label: data.transportLabel,
+      cout_produit: coutProduit,
+      cout_transport: coutTransport,
+      cout_total: coutTotal,
+      adresse: data.adresse,
+      message: data.message || null
+    }).then(function(res){
+      if (res.error) console.error('Erreur enregistrement commande (Supabase) :', res.error);
+    });
 
     // Affiche le message de confirmation
     const success = document.getElementById('form-success');

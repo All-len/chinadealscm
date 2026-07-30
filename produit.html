@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title id="page-title">Fiche produit — PrecoTech</title>
+<title id="page-title">Fiche produit — PrecoTech237</title>
 <link rel="icon" type="image/png" href="images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="PrecoTech">
-<meta property="og:title" content="Fiche produit — PrecoTech">
-<meta property="og:description" content="PrecoTech importe pour vous laptops, PC Gaming, téléphones et produits tech de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
+<meta property="og:site_name" content="PrecoTech237">
+<meta property="og:title" content="Fiche produit — PrecoTech237">
+<meta property="og:description" content="PrecoTech237 importe pour vous laptops, PC Gaming et téléphones de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
 <meta property="og:image" content="https://precotechcm.netlify.app/images/og-image.png">
 <meta property="og:url" content="https://precotechcm.netlify.app/produit.html">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Fiche produit — PrecoTech">
-<meta name="twitter:description" content="PrecoTech importe pour vous laptops, PC Gaming, téléphones et produits tech de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
+<meta name="twitter:title" content="Fiche produit — PrecoTech237">
+<meta name="twitter:description" content="PrecoTech237 importe pour vous laptops, PC Gaming et téléphones de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
 <meta name="twitter:image" content="https://precotechcm.netlify.app/images/og-image.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -23,7 +23,7 @@
 
 <header class="site-header">
   <div class="container nav-row">
-    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech</a>
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
     <nav class="main-nav">
       <a href="index.html">Accueil</a>
       <a href="produits.html" class="active">Produits</a>
@@ -47,6 +47,15 @@
 </div>
 
 <section id="product-root" style="padding-top:8px;"></section>
+
+<!-- Visionneuse plein écran (zoom photo produit) -->
+<div class="lightbox-overlay" id="lightbox-overlay">
+  <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Fermer">✕</button>
+  <button type="button" class="lightbox-nav prev" id="lightbox-prev" aria-label="Précédente">‹</button>
+  <img id="lightbox-img" src="" alt="Photo produit en grand">
+  <button type="button" class="lightbox-nav next" id="lightbox-next" aria-label="Suivante">›</button>
+  <div class="lightbox-counter" id="lightbox-counter"></div>
+</div>
 
 <section style="background:#fff;">
   <div class="container">
@@ -104,7 +113,7 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <h4>PrecoTech</h4>
+        <h4>PrecoTech237</h4>
         <p style="color:#D8C6B4; font-size:.9rem;">Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
       </div>
       <div>
@@ -130,13 +139,13 @@
         <h4>Contact</h4>
         <ul>
           <li><span class="ic-inline" data-icon="phone"></span> <span id="footer-phone">+237 6XX XXX XXX</span></li>
-          <li><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech.com</span></li>
+          <li><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech237.com</span></li>
           <li><span class="ic-inline" data-icon="pin"></span> <span id="footer-address">Bafoussam, Cameroun</span></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 PrecoTech. Tous droits réservés.</span>
+      <span>© 2026 PrecoTech237. Tous droits réservés.</span>
       <span>Paiement à la livraison ou avant expédition, selon accord.</span>
     </div>
   </div>
@@ -156,8 +165,8 @@ document.addEventListener('sitedata:ready', function(){
   const id = getUrlParam('id');
   const product = PRODUCTS.find(p => p.id === id) || PRODUCTS[0];
 
-  document.title = product.nom + ' — PrecoTech';
-  document.getElementById('page-title').textContent = product.nom + ' — PrecoTech';
+  document.title = product.nom + ' — PrecoTech237';
+  document.getElementById('page-title').textContent = product.nom + ' — PrecoTech237';
   document.getElementById('crumb-name').textContent = product.nom;
 
   function tarifLabel(t){
@@ -216,7 +225,14 @@ document.addEventListener('sitedata:ready', function(){
   document.getElementById('product-root').innerHTML = `
   <div class="container product-detail">
     <div>
-      <div class="gallery-main">${mainContent}</div>
+      <div class="gallery-main">
+        ${mainContent}
+        ${galleryImages && galleryImages.length > 1 ? `
+          <button type="button" class="gallery-nav prev" id="gal-prev" aria-label="Photo précédente">‹</button>
+          <button type="button" class="gallery-nav next" id="gal-next" aria-label="Photo suivante">›</button>
+          <div class="gallery-dots" id="gal-dots">${galleryImages.map((_,i)=>`<span class="${i===0?'active':''}"></span>`).join('')}</div>
+        ` : ''}
+      </div>
       <div class="gallery-thumbs">
         ${thumbsHtml}
       </div>
@@ -257,19 +273,68 @@ document.addEventListener('sitedata:ready', function(){
       <div class="reassurance">
         <span>Produit vérifié avant expédition</span>
         <span>Suivi de commande disponible</span>
-        <span>Support après-vente PrecoTech</span>
+        <span>Support après-vente PrecoTech237</span>
       </div>
     </div>
   </div>`;
 
-  // Changement de photo principale au clic sur une miniature
+  // ---------- Contrôleur de galerie (miniatures, flèches, points, visionneuse plein écran) ----------
   if (galleryImages){
-    document.querySelectorAll('.gallery-thumbs .t').forEach(function(thumb){
-      thumb.addEventListener('click', function(){
-        document.querySelectorAll('.gallery-thumbs .t').forEach(t => t.classList.remove('active'));
-        thumb.classList.add('active');
-        document.getElementById('gallery-main-img').src = thumb.dataset.src;
-      });
+    let currentIndex = 0;
+    const mainImg = document.getElementById('gallery-main-img');
+    const thumbs = document.querySelectorAll('.gallery-thumbs .t');
+    const dots = document.querySelectorAll('#gal-dots span');
+
+    function renderIndex(i){
+      currentIndex = (i + galleryImages.length) % galleryImages.length;
+      mainImg.src = galleryImages[currentIndex];
+      thumbs.forEach(t => t.classList.remove('active'));
+      if (thumbs[currentIndex]) thumbs[currentIndex].classList.add('active');
+      dots.forEach(d => d.classList.remove('active'));
+      if (dots[currentIndex]) dots[currentIndex].classList.add('active');
+    }
+
+    thumbs.forEach(function(thumb, i){
+      thumb.addEventListener('click', function(){ renderIndex(i); });
+    });
+
+    const prevBtn = document.getElementById('gal-prev');
+    const nextBtn = document.getElementById('gal-next');
+    if (prevBtn) prevBtn.addEventListener('click', function(){ renderIndex(currentIndex - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', function(){ renderIndex(currentIndex + 1); });
+
+    // Visionneuse plein écran
+    const lightbox = document.getElementById('lightbox-overlay');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCounter = document.getElementById('lightbox-counter');
+
+    function openLightbox(){
+      lightboxImg.src = galleryImages[currentIndex];
+      lightboxCounter.textContent = `${currentIndex + 1} / ${galleryImages.length}`;
+      lightbox.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox(){
+      lightbox.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+    function lightboxShow(i){
+      renderIndex(i);
+      lightboxImg.src = galleryImages[currentIndex];
+      lightboxCounter.textContent = `${currentIndex + 1} / ${galleryImages.length}`;
+    }
+
+    mainImg.addEventListener('click', openLightbox);
+    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+    document.getElementById('lightbox-prev').addEventListener('click', function(){ lightboxShow(currentIndex - 1); });
+    document.getElementById('lightbox-next').addEventListener('click', function(){ lightboxShow(currentIndex + 1); });
+    lightbox.addEventListener('click', function(e){ if (e.target === lightbox) closeLightbox(); });
+
+    document.addEventListener('keydown', function(e){
+      if (!lightbox.classList.contains('show')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') lightboxShow(currentIndex - 1);
+      if (e.key === 'ArrowRight') lightboxShow(currentIndex + 1);
     });
   }
 
@@ -286,7 +351,7 @@ document.addEventListener('sitedata:ready', function(){
     document.getElementById('pd-order-btn').href =
       `commander.html?produitId=${encodeURIComponent(product.id)}&produit=${encodeURIComponent(product.nom)}&qty=${qty}&transport=${t.id}`;
 
-    const texte = `Bonjour PrecoTech, je souhaite commander :\n` +
+    const texte = `Bonjour PrecoTech237, je souhaite commander :\n` +
       `Produit : ${product.nom}\nQuantité : ${qty}\nTransport souhaité : ${t.label} (${t.delai})`;
     document.getElementById('pd-wa-btn').href = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(texte)}`;
 

@@ -85,8 +85,12 @@ async function showAdminApp(){
   bindTransportForm();
   await loadReviewsAdmin();
   renderReviewTable();
+  await loadOrdersAdmin();
+  renderOrderTable();
+  bindOrderFilter();
   initTabs();
   initModal();
+  initOrderModal();
   document.querySelectorAll('[data-icon]').forEach(function(el){
     const name = el.getAttribute('data-icon');
     if (ICONS[name]) el.innerHTML = ICONS[name];
@@ -388,6 +392,130 @@ function bindContactForm(){
     note.style.display = 'block';
     setTimeout(function(){ note.style.display = 'none'; }, 2500);
   });
+}
+
+/* ---------- Commandes ---------- */
+let adminOrders = [];
+let currentOrderStatutFilter = '';
+
+const STATUT_LABELS = {
+  en_attente: 'En attente',
+  confirmee: 'Confirmée',
+  expediee: 'Expédiée',
+  livree: 'Livrée',
+  annulee: 'Annulée'
+};
+
+async function loadOrdersAdmin(){
+  const { data, error } = await supabaseClient
+    .from('orders').select('*').order('created_at', { ascending: false });
+  if (error){ console.error('Erreur de chargement des commandes :', error); return; }
+  adminOrders = data || [];
+}
+
+function renderOrderTable(){
+  const tbody = document.getElementById('order-tbody');
+  const list = currentOrderStatutFilter
+    ? adminOrders.filter(o => o.statut === currentOrderStatutFilter)
+    : adminOrders;
+
+  document.getElementById('order-count').textContent = adminOrders.length;
+
+  if (!list.length){
+    tbody.innerHTML = '<tr><td colspan="8">Aucune commande pour le moment.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(function(o){
+    const date = o.created_at ? new Date(o.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+    const total = o.cout_total != null ? Number(o.cout_total).toLocaleString('fr-FR') + ' FCFA' : '—';
+    const statutOptions = Object.keys(STATUT_LABELS).map(function(key){
+      return `<option value="${key}" ${o.statut === key ? 'selected' : ''}>${STATUT_LABELS[key]}</option>`;
+    }).join('');
+
+    return `<tr>
+      <td data-label="Date">${date}</td>
+      <td data-label="Client">${escapeHtml(o.nom)}<br><span style="color:var(--slate-light); font-size:.78rem;">${escapeHtml(o.telephone)}</span></td>
+      <td data-label="Produit">${escapeHtml(o.produit_nom)}</td>
+      <td data-label="Qté">${o.quantite}</td>
+      <td data-label="Transport">${o.transport_label ? escapeHtml(o.transport_label) : '—'}</td>
+      <td data-label="Total estimé">${total}</td>
+      <td data-label="Statut">
+        <select class="order-statut-select" data-id="${o.id}" style="padding:6px 8px; border:1px solid var(--line); border-radius:6px; font-size:.82rem;">
+          ${statutOptions}
+        </select>
+      </td>
+      <td data-label="Actions">
+        <div class="row-actions">
+          <button class="edit" data-action="voir-commande" data-id="${o.id}">Détails</button>
+          <button class="danger" data-action="supprimer-commande" data-id="${o.id}">Supprimer</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.order-statut-select').forEach(function(sel){
+    sel.addEventListener('change', function(){ updateOrderStatut(sel.dataset.id, sel.value); });
+  });
+  tbody.querySelectorAll('[data-action="voir-commande"]').forEach(function(btn){
+    btn.addEventListener('click', function(){ openOrderModal(btn.dataset.id); });
+  });
+  tbody.querySelectorAll('[data-action="supprimer-commande"]').forEach(function(btn){
+    btn.addEventListener('click', function(){ deleteOrder(btn.dataset.id); });
+  });
+}
+
+async function updateOrderStatut(id, statut){
+  const { error } = await supabaseClient.from('orders').update({ statut }).eq('id', id);
+  if (error){ alert('Erreur lors de la mise à jour du statut : ' + error.message); return; }
+  const order = adminOrders.find(o => o.id === id);
+  if (order) order.statut = statut;
+}
+
+async function deleteOrder(id){
+  if (!confirm('Supprimer définitivement cette commande de l\'historique ?')) return;
+  const { error } = await supabaseClient.from('orders').delete().eq('id', id);
+  if (error){ alert('Erreur lors de la suppression : ' + error.message); return; }
+  adminOrders = adminOrders.filter(o => o.id !== id);
+  renderOrderTable();
+}
+
+function bindOrderFilter(){
+  const filterEl = document.getElementById('order-filter-statut');
+  filterEl.addEventListener('change', function(){
+    currentOrderStatutFilter = filterEl.value;
+    renderOrderTable();
+  });
+}
+
+function initOrderModal(){
+  document.getElementById('btn-close-order-modal').addEventListener('click', function(){
+    document.getElementById('order-modal').classList.remove('show');
+  });
+  document.getElementById('order-modal').addEventListener('click', function(e){
+    if (e.target === this) this.classList.remove('show');
+  });
+}
+
+function openOrderModal(id){
+  const o = adminOrders.find(x => x.id === id);
+  if (!o) return;
+  const date = o.created_at ? new Date(o.created_at).toLocaleString('fr-FR') : '';
+  document.getElementById('order-detail-content').innerHTML = `
+    <p><b>Date :</b> ${date}</p>
+    <p><b>Client :</b> ${escapeHtml(o.nom)}</p>
+    <p><b>Téléphone :</b> ${escapeHtml(o.telephone)}</p>
+    <p><b>E-mail :</b> ${escapeHtml(o.email)}</p>
+    <p><b>Produit :</b> ${escapeHtml(o.produit_nom)} (quantité : ${o.quantite})</p>
+    <p><b>Transport :</b> ${o.transport_label ? escapeHtml(o.transport_label) : '—'}</p>
+    <p><b>Sous-total produit :</b> ${o.cout_produit != null ? Number(o.cout_produit).toLocaleString('fr-FR') + ' FCFA' : '—'}</p>
+    <p><b>Frais de transport estimés :</b> ${o.cout_transport != null ? Number(o.cout_transport).toLocaleString('fr-FR') + ' FCFA' : '—'}</p>
+    <p><b>Total estimé :</b> ${o.cout_total != null ? Number(o.cout_total).toLocaleString('fr-FR') + ' FCFA' : '—'}</p>
+    <p><b>Adresse de livraison :</b> ${escapeHtml(o.adresse)}</p>
+    ${o.message ? `<p><b>Message du client :</b> ${escapeHtml(o.message)}</p>` : ''}
+    <p><b>Statut actuel :</b> ${STATUT_LABELS[o.statut] || o.statut}</p>
+  `;
+  document.getElementById('order-modal').classList.add('show');
 }
 
 /* ---------- Avis clients (modération) ---------- */
