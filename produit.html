@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title id="page-title">Fiche produit — PrecoTech237</title>
+<title id="page-title">Fiche produit — PrecoTech</title>
 <link rel="icon" type="image/png" href="images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="PrecoTech237">
-<meta property="og:title" content="Fiche produit — PrecoTech237">
-<meta property="og:description" content="PrecoTech237 importe pour vous laptops, PC Gaming et téléphones de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
+<meta property="og:site_name" content="PrecoTech">
+<meta property="og:title" content="Fiche produit — PrecoTech">
+<meta property="og:description" content="PrecoTech importe pour vous laptops, PC Gaming, téléphones et produits tech de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
 <meta property="og:image" content="https://precotechcm.netlify.app/images/og-image.png">
 <meta property="og:url" content="https://precotechcm.netlify.app/produit.html">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Fiche produit — PrecoTech237">
-<meta name="twitter:description" content="PrecoTech237 importe pour vous laptops, PC Gaming et téléphones de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
+<meta name="twitter:title" content="Fiche produit — PrecoTech">
+<meta name="twitter:description" content="PrecoTech importe pour vous laptops, PC Gaming, téléphones et produits tech de marque directement de Chine. Choisissez votre mode de livraison et commandez en toute confiance.">
 <meta name="twitter:image" content="https://precotechcm.netlify.app/images/og-image.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -23,7 +23,7 @@
 
 <header class="site-header">
   <div class="container nav-row">
-    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech</a>
     <nav class="main-nav">
       <a href="index.html">Accueil</a>
       <a href="produits.html" class="active">Produits</a>
@@ -104,7 +104,7 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <h4>PrecoTech237</h4>
+        <h4>PrecoTech</h4>
         <p style="color:#D8C6B4; font-size:.9rem;">Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
       </div>
       <div>
@@ -130,13 +130,13 @@
         <h4>Contact</h4>
         <ul>
           <li><span class="ic-inline" data-icon="phone"></span> <span id="footer-phone">+237 6XX XXX XXX</span></li>
-          <li><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech237.com</span></li>
+          <li><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech.com</span></li>
           <li><span class="ic-inline" data-icon="pin"></span> <span id="footer-address">Bafoussam, Cameroun</span></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 PrecoTech237. Tous droits réservés.</span>
+      <span>© 2026 PrecoTech. Tous droits réservés.</span>
       <span>Paiement à la livraison ou avant expédition, selon accord.</span>
     </div>
   </div>
@@ -156,8 +156,8 @@ document.addEventListener('sitedata:ready', function(){
   const id = getUrlParam('id');
   const product = PRODUCTS.find(p => p.id === id) || PRODUCTS[0];
 
-  document.title = product.nom + ' — PrecoTech237';
-  document.getElementById('page-title').textContent = product.nom + ' — PrecoTech237';
+  document.title = product.nom + ' — PrecoTech';
+  document.getElementById('page-title').textContent = product.nom + ' — PrecoTech';
   document.getElementById('crumb-name').textContent = product.nom;
 
   function tarifLabel(t){
@@ -257,7 +257,7 @@ document.addEventListener('sitedata:ready', function(){
       <div class="reassurance">
         <span>Produit vérifié avant expédition</span>
         <span>Suivi de commande disponible</span>
-        <span>Support après-vente PrecoTech237</span>
+        <span>Support après-vente PrecoTech</span>
       </div>
     </div>
   </div>`;
@@ -286,7 +286,7 @@ document.addEventListener('sitedata:ready', function(){
     document.getElementById('pd-order-btn').href =
       `commander.html?produitId=${encodeURIComponent(product.id)}&produit=${encodeURIComponent(product.nom)}&qty=${qty}&transport=${t.id}`;
 
-    const texte = `Bonjour PrecoTech237, je souhaite commander :\n` +
+    const texte = `Bonjour PrecoTech, je souhaite commander :\n` +
       `Produit : ${product.nom}\nQuantité : ${qty}\nTransport souhaité : ${t.label} (${t.delai})`;
     document.getElementById('pd-wa-btn').href = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(texte)}`;
 
