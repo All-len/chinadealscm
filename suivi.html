@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi de ma commande — PrecoTech237</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .tracker-wrap{ max-width:640px; margin:0 auto; }
+  .tracker-card{ background:#fff; border:1px solid var(--line); border-radius: var(--radius); padding:32px 28px; box-shadow: var(--shadow); }
+  .tracker-product{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-bottom:20px; margin-bottom:24px; border-bottom:1px solid var(--line); }
+  .tracker-product b{ font-family:'Sora',sans-serif; color: var(--navy); }
+
+  .steps-vertical{ display:flex; flex-direction:column; }
+  .step-v{ display:flex; gap:16px; }
+  .step-v .marker{ display:flex; flex-direction:column; align-items:center; }
+  .step-v .dot{
+    width:30px; height:30px; border-radius:50%; background:#F1F0EE; color:#9A9088;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.85rem; flex-shrink:0;
+  }
+  .step-v .line{ flex:1; width:2px; background:#E2E8F0; min-height:28px; }
+  .step-v:last-child .line{ display:none; }
+  .step-v .content{ padding-bottom:28px; }
+  .step-v .content h4{ margin:0 0 4px; font-size:.95rem; color: var(--slate); }
+  .step-v .content p{ margin:0; font-size:.82rem; color: var(--slate-light); }
+
+  .step-v.done .dot{ background: var(--green); color:#fff; }
+  .step-v.done .line{ background: var(--green); }
+  .step-v.done .content h4{ color: var(--navy); }
+  .step-v.current .dot{ background: var(--blue); color:#fff; box-shadow: 0 0 0 4px rgba(224,38,44,.15); }
+  .step-v.current .content h4{ color: var(--navy); font-weight:800; }
+  .step-v.current .content p{ color: var(--slate); }
+
+  .tracker-cancelled{ background: rgba(192,39,45,.06); border:1px solid rgba(192,39,45,.25); color:#8a2126; padding:16px 18px; border-radius:8px; margin-bottom:20px; font-weight:600; }
+  .tracker-action{ margin-top:24px; padding-top:20px; border-top:1px solid var(--line); text-align:center; }
+  .tracker-loading, .tracker-error{ text-align:center; padding:60px 20px; color: var(--slate); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <nav class="main-nav">
+      <a href="index.html">Accueil</a>
+      <a href="produits.html">Produits</a>
+      <a href="transport.html">Transport</a>
+      <a href="comment-ca-marche.html">Comment ça marche</a>
+      <a href="a-propos.html">À propos</a>
+      <a href="contact.html">Contact</a>
+      <a href="commander.html" class="mobile-cta">Commander</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="commander.html" class="btn btn-outline">Commander</a>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<section style="padding-top:32px;">
+  <div class="container tracker-wrap">
+    <div class="section-head">
+      <div class="eyebrow">Suivi de commande</div>
+      <h1 style="font-size:1.6rem;">Où en est ma commande ?</h1>
+    </div>
+
+    <div id="tracker-loading" class="tracker-loading">Chargement du suivi de votre commande...</div>
+    <div id="tracker-error" class="tracker-error" style="display:none;">
+      <p>Impossible de retrouver cette commande. Vérifiez que le lien utilisé est bien complet, ou contactez-nous directement.</p>
+      <a href="https://wa.me/237600000000" target="_blank" class="btn btn-whatsapp" style="margin-top:12px;">Contacter le support</a>
+    </div>
+
+    <div id="tracker-content" style="display:none;">
+      <div class="tracker-card">
+        <div class="tracker-product">
+          <div><b id="tp-nom"></b><div style="font-size:.85rem; color:var(--slate);">Quantité : <span id="tp-qte"></span></div></div>
+          <div style="font-size:.85rem; color:var(--slate-light);" id="tp-date"></div>
+        </div>
+
+        <div id="tracker-cancelled-banner" class="tracker-cancelled" style="display:none;">
+          ✕ Cette commande a été annulée.
+        </div>
+
+        <div id="steps-container" class="steps-vertical"></div>
+
+        <div id="tracker-action" class="tracker-action" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Section avis, révélée uniquement une fois la commande livrée -->
+    <div id="tracker-review-section" style="display:none; margin-top:40px;">
+      <div class="section-head left">
+        <div class="eyebrow">Votre avis compte</div>
+        <h2 style="font-size:1.3rem;">Comment était votre produit ?</h2>
+      </div>
+      <div class="form-card" style="max-width:560px;">
+        <div class="form-success" id="review-success">✓ Merci, votre avis a bien été publié.</div>
+        <form id="review-form">
+          <div class="form-row">
+            <label>Votre nom <span class="req">*</span></label>
+            <input type="text" name="nom" required placeholder="Ex : Jean Mballa">
+          </div>
+          <div class="form-row">
+            <label>Votre note</label>
+            <div class="star-select">
+              <label><input type="radio" name="note" value="5" checked> ★★★★★</label>
+              <label><input type="radio" name="note" value="4"> ★★★★☆</label>
+              <label><input type="radio" name="note" value="3"> ★★★☆☆</label>
+              <label><input type="radio" name="note" value="2"> ★★☆☆☆</label>
+              <label><input type="radio" name="note" value="1"> ★☆☆☆☆</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Votre commentaire</label>
+            <textarea name="commentaire" rows="3" placeholder="Votre expérience avec ce produit..."></textarea>
+          </div>
+          <div class="form-row">
+            <label>Photos (facultatif, 4 maximum)</label>
+            <input type="file" name="photos" accept="image/*" multiple>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Publier mon avis</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>PrecoTech237</h4>
+        <p style="color:#D8C6B4; font-size:.9rem;">Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
+      </div>
+      <div>
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="produits.html">Produits</a></li>
+          <li><a href="transport.html">Transport</a></li>
+          <li><a href="comment-ca-marche.html">Comment ça marche</a></li>
+          <li><a href="a-propos.html">À propos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="commander.html">Passer commande</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="garantie-retours.html">Garantie &amp; retours</a></li>
+          <li><a href="mentions-legales.html">Mentions légales</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><span class="ic-inline" data-icon="phone"></span> <span id="footer-phone">+237 6XX XXX XXX</span></li>
+          <li><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech237.com</span></li>
+          <li><span class="ic-inline" data-icon="pin"></span> <span id="footer-address">Bafoussam, Cameroun</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PrecoTech237. Tous droits réservés.</span>
+      <span>Paiement à la livraison ou avant expédition, selon accord.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/main.js"></script>
+<script src="js/app-init.js"></script>
+<script src="js/suivi.js"></script>
+</body>
+</html>

@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /commander.html
+Disallow: /suivi.html
 
 Sitemap: https://precotechcm.netlify.app/sitemap.xml

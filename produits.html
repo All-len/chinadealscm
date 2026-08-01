@@ -61,9 +61,6 @@
       <label>Catégorie
         <select id="filter-cat">
           <option value="all">Toutes les catégories</option>
-          <option value="laptops">Laptops</option>
-          <option value="pc-gaming">PC Gaming</option>
-          <option value="telephones">Téléphones</option>
         </select>
       </label>
       <label>Trier par
@@ -149,6 +146,15 @@
       const list = filterProducts(catSelect.value, sortSelect.value, searchInput.value);
       grid.innerHTML = list.map(productCardHTML).join('') || '<p>Aucun produit ne correspond à votre recherche.</p>';
     }
+
+    // Catégories dynamiques : reflète exactement les catégories utilisées par vos produits
+    const categories = getDynamicCategories();
+    Object.keys(categories).forEach(function(key){
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = categories[key];
+      catSelect.appendChild(opt);
+    });
 
     // Pré-sélection de catégorie via l'URL (?cat=laptops)
     const catParam = getUrlParam('cat');

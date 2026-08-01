@@ -106,6 +106,15 @@ function productIconSVG(categorie){
   return icons[categorie] || icons['laptops'];
 }
 
+/* --- Catégories dynamiques (dérivées des produits réellement en catalogue) --- */
+function getDynamicCategories(){
+  const map = {};
+  PRODUCTS.forEach(function(p){
+    if (p.categorie && !map[p.categorie]) map[p.categorie] = p.categorieLabel || p.categorie;
+  });
+  return map; // { 'laptops': 'Laptops', ... }
+}
+
 /* --- Filtrage du catalogue (utilisé sur produits.html) --- */
 function filterProducts(categorie, tri, recherche){
   let list = [...PRODUCTS];

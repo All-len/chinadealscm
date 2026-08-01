@@ -75,9 +75,6 @@
     </div>
     <div class="cat-pills" id="home-cat-pills">
       <button class="pill active" data-cat="all">Tous</button>
-      <button class="pill" data-cat="laptops">Laptops</button>
-      <button class="pill" data-cat="pc-gaming">PC Gaming</button>
-      <button class="pill" data-cat="telephones">Téléphones</button>
     </div>
     <div class="grid-4" id="featured-products"></div>
     <div class="text-center" style="margin-top:32px;">
@@ -190,7 +187,17 @@
   document.addEventListener('sitedata:ready', function(){
     // Produits filtrables par catégorie (pastilles)
     const grid = document.getElementById('featured-products');
-    const pills = document.querySelectorAll('#home-cat-pills .pill');
+    const pillsWrap = document.getElementById('home-cat-pills');
+
+    // Catégories dynamiques : reflète exactement les catégories utilisées par vos produits
+    const categories = getDynamicCategories();
+    Object.keys(categories).forEach(function(key){
+      const btn = document.createElement('button');
+      btn.className = 'pill';
+      btn.dataset.cat = key;
+      btn.textContent = categories[key];
+      pillsWrap.appendChild(btn);
+    });
 
     function renderHomeProducts(cat){
       const list = filterProducts(cat, 'default').slice(0, 8);
@@ -198,9 +205,9 @@
       window.watchReveal && window.watchReveal();
     }
 
-    pills.forEach(function(btn){
+    pillsWrap.querySelectorAll('.pill').forEach(function(btn){
       btn.addEventListener('click', function(){
-        pills.forEach(p => p.classList.remove('active'));
+        pillsWrap.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         renderHomeProducts(btn.dataset.cat);
       });

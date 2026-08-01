@@ -105,8 +105,20 @@ document.addEventListener('sitedata:ready', function(){
       cout_total: coutTotal,
       adresse: data.adresse,
       message: data.message || null
-    }).then(function(res){
-      if (res.error) console.error('Erreur enregistrement commande (Supabase) :', res.error);
+    }).select().single().then(function(res){
+      if (res.error){
+        console.error('Erreur enregistrement commande (Supabase) :', res.error);
+        return;
+      }
+      // Affiche le lien de suivi que le client peut enregistrer/mettre en favoris
+      const trackingUrl = `${window.location.origin}/suivi.html?id=${res.data.id}`;
+      const wrap = document.getElementById('tracking-link-wrap');
+      const link = document.getElementById('tracking-link');
+      if (wrap && link){
+        link.href = trackingUrl;
+        link.textContent = trackingUrl;
+        wrap.style.display = 'block';
+      }
     });
 
     // Affiche le message de confirmation

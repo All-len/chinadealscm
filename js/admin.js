@@ -173,9 +173,60 @@ function initModal(){
   document.getElementById('btn-add-spec').addEventListener('click', function(){ addSpecRow('', ''); });
   document.getElementById('product-form').addEventListener('submit', submitProductForm);
   bindMediaUploads();
+  bindCategorySelect();
 
   document.getElementById('product-modal').addEventListener('click', function(e){
     if (e.target === this) closeProductModal();
+  });
+}
+
+/* ---------- Catégories dynamiques ---------- */
+const CATEGORY_LABELS_KNOWN = { 'laptops':'Laptops', 'pc-gaming':'PC Gaming', 'telephones':'Téléphones' };
+
+function slugify(text){
+  return text.toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 30);
+}
+
+function getKnownCategories(){
+  // Combine les catégories déjà utilisées par vos produits + les catégories "historiques"
+  const map = {};
+  Object.keys(CATEGORY_LABELS_KNOWN).forEach(function(k){ map[k] = CATEGORY_LABELS_KNOWN[k]; });
+  adminProducts.forEach(function(p){
+    if (p.categorie && !map[p.categorie]) map[p.categorie] = p.categorieLabel || p.categorie;
+  });
+  return map;
+}
+
+function populateCategorySelect(selectedValue){
+  const sel = document.getElementById('p-categorie');
+  const categories = getKnownCategories();
+  let html = Object.keys(categories).map(function(key){
+    return `<option value="${key}">${escapeHtml(categories[key])}</option>`;
+  }).join('');
+  html += `<option value="__new__">+ Nouvelle catégorie...</option>`;
+  sel.innerHTML = html;
+
+  const newInput = document.getElementById('p-categorie-nouvelle');
+  if (selectedValue && categories[selectedValue]){
+    sel.value = selectedValue;
+    newInput.style.display = 'none';
+  } else {
+    sel.value = Object.keys(categories)[0] || '__new__';
+    newInput.style.display = 'none';
+  }
+}
+
+function bindCategorySelect(){
+  document.getElementById('p-categorie').addEventListener('change', function(){
+    const newInput = document.getElementById('p-categorie-nouvelle');
+    if (this.value === '__new__'){
+      newInput.style.display = 'block';
+      newInput.focus();
+    } else {
+      newInput.style.display = 'none';
+    }
   });
 }
 
@@ -185,13 +236,14 @@ function openProductModal(id){
   form.reset();
   document.getElementById('spec-rows').innerHTML = '';
   document.getElementById('p-video-status').textContent = '';
+  document.getElementById('p-categorie-nouvelle').value = '';
 
   if (id){
     const p = adminProducts.find(x => x.id === id);
     document.getElementById('modal-title').textContent = 'Modifier le produit';
     document.getElementById('p-id').value = p.id;
     document.getElementById('p-nom').value = p.nom;
-    document.getElementById('p-categorie').value = p.categorie;
+    populateCategorySelect(p.categorie);
     document.getElementById('p-prix').value = p.prix;
     document.getElementById('p-badge').value = p.badge || '';
     document.getElementById('p-etat').value = p.etat || '';
@@ -208,6 +260,7 @@ function openProductModal(id){
   } else {
     document.getElementById('modal-title').textContent = 'Ajouter un produit';
     document.getElementById('p-id').value = '';
+    populateCategorySelect(null);
     document.getElementById('p-video-url').value = '';
     currentProductImages = [];
     currentUploadFolder = 'new-' + Date.now();
@@ -235,12 +288,6 @@ function addSpecRow(label, value){
   wrap.appendChild(row);
 }
 
-function slugify(text){
-  return text.toString().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 30);
-}
-
 async function submitProductForm(e){
   e.preventDefault();
 
@@ -253,15 +300,28 @@ async function submitProductForm(e){
 
   const nom = document.getElementById('p-nom').value.trim();
   const existingId = document.getElementById('p-id').value;
-  const categorie = document.getElementById('p-categorie').value;
-  const catLabels = { 'laptops':'Laptops', 'pc-gaming':'PC Gaming', 'telephones':'Téléphones' };
+
+  // Catégorie : soit une existante, soit une toute nouvelle tapée par l'utilisateur
+  let categorie = document.getElementById('p-categorie').value;
+  let categorieLabel;
+  if (categorie === '__new__'){
+    const nouvelleLabel = document.getElementById('p-categorie-nouvelle').value.trim();
+    if (!nouvelleLabel){
+      alert('Merci de donner un nom à la nouvelle catégorie.');
+      return;
+    }
+    categorie = slugify(nouvelleLabel);
+    categorieLabel = nouvelleLabel;
+  } else {
+    categorieLabel = getKnownCategories()[categorie] || categorie;
+  }
 
   // Colonnes en snake_case pour correspondre au schéma Supabase
   const row = {
     id: existingId || (slugify(nom) + '-' + Date.now().toString().slice(-5)),
     nom: nom,
     categorie: categorie,
-    categorie_label: catLabels[categorie],
+    categorie_label: categorieLabel,
     prix: Number(document.getElementById('p-prix').value),
     etat: document.getElementById('p-etat').value.trim(),
     disponibilite: document.getElementById('p-disponibilite').value,
@@ -406,6 +466,16 @@ const STATUT_LABELS = {
   annulee: 'Annulée'
 };
 
+// Ordre strict des étapes — on ne peut avancer qu'à l'étape suivante, jamais revenir en arrière.
+// "annulee" est une sortie possible à tout moment avant "livree", gérée séparément.
+const STATUT_SEQUENCE = ['en_attente', 'confirmee', 'expediee', 'livree'];
+
+function nextStatut(current){
+  const idx = STATUT_SEQUENCE.indexOf(current);
+  if (idx === -1 || idx === STATUT_SEQUENCE.length - 1) return null;
+  return STATUT_SEQUENCE[idx + 1];
+}
+
 async function loadOrdersAdmin(){
   const { data, error } = await supabaseClient
     .from('orders').select('*').order('created_at', { ascending: false });
@@ -429,9 +499,14 @@ function renderOrderTable(){
   tbody.innerHTML = list.map(function(o){
     const date = o.created_at ? new Date(o.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
     const total = o.cout_total != null ? Number(o.cout_total).toLocaleString('fr-FR') + ' FCFA' : '—';
-    const statutOptions = Object.keys(STATUT_LABELS).map(function(key){
-      return `<option value="${key}" ${o.statut === key ? 'selected' : ''}>${STATUT_LABELS[key]}</option>`;
-    }).join('');
+    const next = nextStatut(o.statut);
+    const isTerminal = (o.statut === 'livree' || o.statut === 'annulee');
+
+    const statutHtml = `
+      <span class="order-statut-badge statut-${o.statut}">${STATUT_LABELS[o.statut] || o.statut}</span>
+      ${next ? `<button type="button" class="btn-next-statut" data-id="${o.id}" data-next="${next}">→ ${STATUT_LABELS[next]}</button>` : ''}
+      ${!isTerminal ? `<button type="button" class="btn-cancel-statut" data-id="${o.id}">Annuler</button>` : ''}
+    `;
 
     return `<tr>
       <td data-label="Date">${date}</td>
@@ -440,11 +515,7 @@ function renderOrderTable(){
       <td data-label="Qté">${o.quantite}</td>
       <td data-label="Transport">${o.transport_label ? escapeHtml(o.transport_label) : '—'}</td>
       <td data-label="Total estimé">${total}</td>
-      <td data-label="Statut">
-        <select class="order-statut-select" data-id="${o.id}" style="padding:6px 8px; border:1px solid var(--line); border-radius:6px; font-size:.82rem;">
-          ${statutOptions}
-        </select>
-      </td>
+      <td data-label="Statut"><div class="order-statut-cell">${statutHtml}</div></td>
       <td data-label="Actions">
         <div class="row-actions">
           <button class="edit" data-action="voir-commande" data-id="${o.id}">Détails</button>
@@ -454,8 +525,17 @@ function renderOrderTable(){
     </tr>`;
   }).join('');
 
-  tbody.querySelectorAll('.order-statut-select').forEach(function(sel){
-    sel.addEventListener('change', function(){ updateOrderStatut(sel.dataset.id, sel.value); });
+  tbody.querySelectorAll('.btn-next-statut').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      if (!confirm(`Faire passer cette commande à l'étape « ${STATUT_LABELS[btn.dataset.next]} » ? Cette étape ne pourra plus être annulée une fois passée.`)) return;
+      updateOrderStatut(btn.dataset.id, btn.dataset.next);
+    });
+  });
+  tbody.querySelectorAll('.btn-cancel-statut').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      if (!confirm('Annuler cette commande ? Cette action est définitive.')) return;
+      updateOrderStatut(btn.dataset.id, 'annulee');
+    });
   });
   tbody.querySelectorAll('[data-action="voir-commande"]').forEach(function(btn){
     btn.addEventListener('click', function(){ openOrderModal(btn.dataset.id); });
@@ -501,6 +581,7 @@ function openOrderModal(id){
   const o = adminOrders.find(x => x.id === id);
   if (!o) return;
   const date = o.created_at ? new Date(o.created_at).toLocaleString('fr-FR') : '';
+  const trackingUrl = `${window.location.origin}/suivi.html?id=${o.id}`;
   document.getElementById('order-detail-content').innerHTML = `
     <p><b>Date :</b> ${date}</p>
     <p><b>Client :</b> ${escapeHtml(o.nom)}</p>
@@ -514,7 +595,24 @@ function openOrderModal(id){
     <p><b>Adresse de livraison :</b> ${escapeHtml(o.adresse)}</p>
     ${o.message ? `<p><b>Message du client :</b> ${escapeHtml(o.message)}</p>` : ''}
     <p><b>Statut actuel :</b> ${STATUT_LABELS[o.statut] || o.statut}</p>
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
+      <p style="margin-bottom:8px;"><b>Lien de suivi à transmettre au client</b> (par WhatsApp par exemple) :</p>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" readonly value="${trackingUrl}" id="tracking-url-input" style="flex:1; min-width:200px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:.82rem;">
+        <button type="button" class="btn btn-outline" id="btn-copy-tracking" style="padding:8px 14px; font-size:.82rem;">Copier</button>
+      </div>
+    </div>
   `;
+  document.getElementById('btn-copy-tracking').addEventListener('click', function(){
+    const input = document.getElementById('tracking-url-input');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(function(){
+      const btn = document.getElementById('btn-copy-tracking');
+      const original = btn.textContent;
+      btn.textContent = 'Copié !';
+      setTimeout(function(){ btn.textContent = original; }, 1500);
+    });
+  });
   document.getElementById('order-modal').classList.add('show');
 }
 

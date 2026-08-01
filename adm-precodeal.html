@@ -58,6 +58,25 @@
   #admin-app{ display:none; }
   .dims-row{ display:flex; gap:8px; }
 
+  .order-statut-cell{ display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+  .order-statut-badge{
+    display:inline-block; padding:4px 10px; border-radius:20px; font-size:.76rem; font-weight:700;
+    font-family:'Sora',sans-serif;
+  }
+  .order-statut-badge.statut-en_attente{ background:#F1F0EE; color:#6B6459; }
+  .order-statut-badge.statut-confirmee{ background:rgba(232,163,0,.15); color:#8A6116; }
+  .order-statut-badge.statut-expediee{ background:rgba(27,79,140,.12); color:#1B4F8C; }
+  .order-statut-badge.statut-livree{ background:rgba(31,157,85,.14); color:var(--green-dark); }
+  .order-statut-badge.statut-annulee{ background:rgba(192,39,45,.1); color:#C0272D; }
+  .btn-next-statut{
+    background: var(--navy); color:#fff; border:none; border-radius:6px; padding:6px 10px;
+    font-size:.76rem; font-weight:600; cursor:pointer;
+  }
+  .btn-cancel-statut{
+    background:none; border:none; color:#C0272D; font-size:.74rem; text-decoration:underline; cursor:pointer; padding:0;
+  }
+  .admin-table td[data-label="Statut"]{ align-items:flex-start; }
+
   /* ================= MOBILE ================= */
   @media (max-width: 640px){
     .admin-header a.logo{ font-size:.92rem; }
@@ -302,11 +321,8 @@
         </div>
         <div class="form-row">
           <label>Catégorie <span class="req">*</span></label>
-          <select id="p-categorie" required>
-            <option value="laptops">Laptops</option>
-            <option value="pc-gaming">PC Gaming</option>
-            <option value="telephones">Téléphones</option>
-          </select>
+          <select id="p-categorie"></select>
+          <input type="text" id="p-categorie-nouvelle" placeholder="Nom de la nouvelle catégorie (ex : Accessoires)" style="display:none; margin-top:8px;">
         </div>
       </div>
       <div class="two-col">
