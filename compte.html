@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon compte — PrecoTech237</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .account-wrap{ max-width:520px; margin:0 auto; }
+  .auth-tabs{ display:flex; gap:8px; margin-bottom:24px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:6px; }
+  .auth-tabs button{
+    flex:1; background:none; border:none; padding:11px; border-radius:8px; font-family:'Sora',sans-serif;
+    font-weight:700; font-size:.88rem; color:var(--slate); cursor:pointer;
+  }
+  .auth-tabs button.active{ background:var(--navy); color:#fff; }
+  .auth-panel{ display:none; }
+  .auth-panel.active{ display:block; }
+  .account-header{ display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+  .account-avatar{ width:52px; height:52px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Sora',sans-serif; font-weight:800; font-size:1.2rem; flex-shrink:0; }
+  .order-mini{ display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border:1px solid var(--line); border-radius:8px; margin-bottom:10px; background:#fff; gap:10px; flex-wrap:wrap; }
+  .order-mini .statut-tag{ font-size:.74rem; font-weight:700; padding:4px 10px; border-radius:20px; background:var(--off-white); color:var(--slate); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <nav class="main-nav">
+      <a href="index.html" class="nav-secondary">Accueil</a>
+      <a href="produits.html">Produits</a>
+      <a href="transport.html">Transport</a>
+      <a href="comment-ca-marche.html" class="nav-secondary">Comment ça marche</a>
+      <a href="a-propos.html" class="nav-secondary">À propos</a>
+      <a href="contact.html">Contact</a>
+      <a href="commander.html" class="mobile-cta">Commander</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="compte.html" class="btn btn-outline account-nav-link" id="account-nav-link">Se connecter</a>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<section style="padding-top:32px;">
+  <div class="container account-wrap">
+
+    <!-- Non connecté : connexion / inscription -->
+    <div id="auth-section">
+      <div class="section-head">
+        <div class="eyebrow">Mon compte</div>
+        <h1 style="font-size:1.6rem;">Connectez-vous ou créez un compte</h1>
+        <p>Un compte vous permet de ne plus ressaisir vos informations à chaque commande, et de retrouver facilement votre historique.</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="active" data-tab="login">Se connecter</button>
+        <button data-tab="signup">Créer un compte</button>
+      </div>
+
+      <div id="panel-login" class="auth-panel active form-card">
+        <div class="form-success" id="login-error-box" style="display:none; background:rgba(192,39,45,.08); border-color:#C0272D; color:#8a2126;"></div>
+        <form id="login-form">
+          <div class="form-row">
+            <label>Adresse e-mail</label>
+            <input type="email" name="email" required>
+          </div>
+          <div class="form-row">
+            <label>Mot de passe</label>
+            <input type="password" name="password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+        </form>
+      </div>
+
+      <div id="panel-signup" class="auth-panel form-card">
+        <div class="form-success" id="signup-error-box" style="display:none; background:rgba(192,39,45,.08); border-color:#C0272D; color:#8a2126;"></div>
+        <form id="signup-form">
+          <div class="form-row">
+            <label>Nom complet</label>
+            <input type="text" name="nom" required placeholder="Ex : Jean Mballa">
+          </div>
+          <div class="form-row">
+            <label>Adresse e-mail</label>
+            <input type="email" name="email" required>
+          </div>
+          <div class="form-row">
+            <label>Mot de passe</label>
+            <input type="password" name="password" required minlength="6" placeholder="6 caractères minimum">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Créer mon compte</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Connecté : profil + commandes -->
+    <div id="profile-section" style="display:none;">
+      <div class="account-header">
+        <div class="account-avatar" id="account-initial">?</div>
+        <div>
+          <h1 style="font-size:1.3rem; margin:0;" id="account-name">—</h1>
+          <p style="margin:0; color:var(--slate); font-size:.85rem;" id="account-email">—</p>
+        </div>
+      </div>
+
+      <div class="section-head left">
+        <h2 style="font-size:1.1rem;">Mes informations</h2>
+        <p style="margin-top:-8px;">Modifiables à tout moment — elles pré-rempliront automatiquement vos prochaines commandes.</p>
+      </div>
+      <div class="form-card" style="margin-bottom:36px;">
+        <div class="form-success" id="profile-saved-note">✓ Informations enregistrées.</div>
+        <form id="profile-form">
+          <div class="form-row">
+            <label>Nom complet</label>
+            <input type="text" name="nom" id="pf-nom">
+          </div>
+          <div class="form-row">
+            <label>Téléphone / WhatsApp</label>
+            <input type="tel" name="telephone" id="pf-telephone" placeholder="+237 6XX XX XX XX">
+          </div>
+          <div class="form-row">
+            <label>Ville</label>
+            <input type="text" name="ville" id="pf-ville" placeholder="Ex : Bafoussam">
+          </div>
+          <div class="form-row">
+            <label>Adresse de livraison habituelle</label>
+            <textarea name="adresse" id="pf-adresse" placeholder="Quartier, repère..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Enregistrer mes informations</button>
+        </form>
+      </div>
+
+      <div class="section-head left">
+        <h2 style="font-size:1.1rem;">Mes commandes</h2>
+      </div>
+      <div id="my-orders-list"><p style="color:var(--slate);">Chargement...</p></div>
+
+      <button type="button" class="btn btn-outline" id="btn-logout" style="margin-top:28px;">Se déconnecter</button>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer sheet-footer">
+  <div class="sheet-handle"></div>
+  <div class="container">
+    <div class="sheet-brand">
+      <div class="logo-mark"><span class="dot"></span> PrecoTech237</div>
+      <p>Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
+    </div>
+
+    <div class="chip-row">
+      <a href="index.html" class="chip">Accueil</a>
+      <a href="produits.html" class="chip">Produits</a>
+      <a href="transport.html" class="chip">Transport</a>
+      <a href="comment-ca-marche.html" class="chip">Comment ça marche</a>
+      <a href="a-propos.html" class="chip">À propos</a>
+      <a href="commander.html" class="chip">Commander</a>
+      <a href="faq.html" class="chip">FAQ</a>
+      <a href="garantie-retours.html" class="chip">Garantie &amp; retours</a>
+    </div>
+
+    <div class="chip-row contact-chips">
+      <a href="#" id="footer-phone-link" target="_blank" class="chip"><span class="ic-inline" data-icon="phone"></span> <span id="footer-phone">+237 6XX XXX XXX</span></a>
+      <a href="#" id="footer-email-link" class="chip"><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech237.com</span></a>
+      <span class="chip"><span class="ic-inline" data-icon="pin"></span> <span id="footer-address">Bafoussam, Cameroun</span></span>
+    </div>
+
+    <div class="sheet-bottom">
+      <span>© 2026 PrecoTech237</span>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <span>Paiement à la livraison ou avant expédition, selon accord.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/main.js"></script>
+<script src="js/app-init.js"></script>
+<script src="js/compte.js"></script>
+</body>
+</html>

@@ -54,6 +54,12 @@ function renderContactInfo(){
     const el = document.getElementById(id);
     if (el && map[id]) el.textContent = map[id];
   });
+
+  // Les puces de contact du footer sont cliquables : on met aussi à jour leur lien
+  const footerPhoneLink = document.getElementById('footer-phone-link');
+  if (footerPhoneLink) footerPhoneLink.href = `https://wa.me/${CONTACT.whatsappNumber}`;
+  const footerEmailLink = document.getElementById('footer-email-link');
+  if (footerEmailLink) footerEmailLink.href = `mailto:${CONTACT.email}`;
 }
 
 /* --- Boutons WhatsApp statiques (hors bouton flottant), ex: "Discuter sur WhatsApp" --- */
@@ -104,6 +110,25 @@ function productIconSVG(categorie){
     'telephones': `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#E0262C" stroke-width="1.5"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>`
   };
   return icons[categorie] || icons['laptops'];
+}
+
+/* --- Lien "Se connecter" / "Mon compte" dans le header, sur toutes les pages --- */
+async function renderAccountNav(){
+  const links = document.querySelectorAll('.account-nav-link');
+  if (!links.length) return;
+
+  const { data: { session } } = await supabaseClient.auth.getSession();
+
+  if (!session){
+    links.forEach(function(el){ el.textContent = 'Se connecter'; el.href = 'compte.html'; });
+    return;
+  }
+
+  const { data: profile } = await supabaseClient
+    .from('customer_profiles').select('nom').eq('id', session.user.id).maybeSingle();
+  const label = (profile && profile.nom) ? profile.nom.split(' ')[0] : 'Mon compte';
+
+  links.forEach(function(el){ el.textContent = label; el.href = 'compte.html'; });
 }
 
 /* --- Catégories dynamiques (dérivées des produits réellement en catalogue) --- */

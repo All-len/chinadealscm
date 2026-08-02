@@ -29,7 +29,9 @@ ${data.message ? '\nMessage : ' + data.message : ''}`
   );
 }
 
-document.addEventListener('sitedata:ready', function(){
+let loggedInCustomerId = null;
+
+document.addEventListener('sitedata:ready', async function(){
   const form = document.getElementById('order-form');
   if (!form) return;
 
@@ -38,6 +40,28 @@ document.addEventListener('sitedata:ready', function(){
   if (produitParam){
     const produitField = form.querySelector('[name="produit"]');
     if (produitField) produitField.value = decodeURIComponent(produitParam);
+  }
+
+  // Si le client est connecté : pré-remplir ses informations depuis son profil
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session){
+    loggedInCustomerId = session.user.id;
+    const { data: profile } = await supabaseClient
+      .from('customer_profiles').select('*').eq('id', session.user.id).maybeSingle();
+
+    form.querySelector('[name="email"]').value = session.user.email || '';
+    if (profile){
+      if (profile.nom) form.querySelector('[name="nom"]').value = profile.nom;
+      if (profile.telephone) form.querySelector('[name="telephone"]').value = profile.telephone;
+      if (profile.adresse || profile.ville){
+        form.querySelector('[name="adresse"]').value = [profile.ville, profile.adresse].filter(Boolean).join(' — ');
+      }
+    }
+
+    const note = document.createElement('p');
+    note.style.cssText = 'font-size:.82rem; color:var(--green-dark); margin:-10px 0 18px; font-weight:600;';
+    note.textContent = '✓ Vos informations ont été pré-remplies depuis votre compte.';
+    form.insertBefore(note, form.firstChild);
   }
 
   form.addEventListener('submit', function(e){
@@ -104,7 +128,8 @@ document.addEventListener('sitedata:ready', function(){
       cout_transport: coutTransport,
       cout_total: coutTotal,
       adresse: data.adresse,
-      message: data.message || null
+      message: data.message || null,
+      customer_id: loggedInCustomerId
     }).select().single().then(function(res){
       if (res.error){
         console.error('Erreur enregistrement commande (Supabase) :', res.error);

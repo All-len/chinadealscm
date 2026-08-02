@@ -3,5 +3,6 @@ Allow: /
 Disallow: /admin.html
 Disallow: /commander.html
 Disallow: /suivi.html
+Disallow: /compte.html
 
 Sitemap: https://precotechcm.netlify.app/sitemap.xml

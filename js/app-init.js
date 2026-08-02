@@ -9,5 +9,6 @@ document.addEventListener('DOMContentLoaded', async function(){
   renderWaFloat();
   renderContactInfo();
   renderStaticWaLinks();
+  renderAccountNav();
   document.dispatchEvent(new Event('sitedata:ready'));
 });
