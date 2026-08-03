@@ -1,7 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /admin.html
-Disallow: /commander.html
 Disallow: /suivi.html
 Disallow: /compte.html
 

@@ -18,14 +18,32 @@
 <meta name="twitter:title" content="FAQ — Questions fréquentes | PrecoTech237">
 <meta name="twitter:description" content="Toutes les réponses à vos questions sur la commande, le paiement, les délais de livraison, la garantie et les avis chez PrecoTech237.">
 <meta name="twitter:image" content="https://precotechcm.netlify.app/images/og-image.png">
+<link rel="canonical" href="https://precotechcm.netlify.app/faq.html">
 <link rel="stylesheet" href="css/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Comment passer une commande ?", "acceptedAnswer": {"@type": "Answer", "text": "Parcourez le catalogue, choisissez un produit et un mode de transport, puis remplissez le formulaire de commande. Votre demande est transmise instantanément sur WhatsApp, où un conseiller confirme la disponibilité et les modalités."}},
+    {"@type": "Question", "name": "Quels moyens de paiement acceptez-vous ?", "acceptedAnswer": {"@type": "Answer", "text": "Le paiement se fait selon accord avec le conseiller au moment de la confirmation (avant expédition ou à la livraison, selon le produit et le montant). Les détails sont toujours confirmés directement sur WhatsApp avant toute expédition."}},
+    {"@type": "Question", "name": "Combien de temps pour recevoir ma commande ?", "acceptedAnswer": {"@type": "Answer", "text": "Cela dépend du mode de transport choisi : maritime (45 à 60 jours), aérien normal (15 à 21 jours) ou aérien express (7 jours maximum)."}},
+    {"@type": "Question", "name": "Puis-je annuler ou modifier ma commande ?", "acceptedAnswer": {"@type": "Answer", "text": "Oui, tant que le produit n'a pas encore été expédié depuis la Chine. Contactez votre conseiller sur WhatsApp le plus rapidement possible pour toute modification."}},
+    {"@type": "Question", "name": "Les produits sont-ils neufs ou reconditionnés ?", "acceptedAnswer": {"@type": "Answer", "text": "Les deux existent selon les produits — l'état exact est toujours précisé sur chaque fiche produit."}},
+    {"@type": "Question", "name": "Proposez-vous une garantie ?", "acceptedAnswer": {"@type": "Answer", "text": "Oui. La durée de garantie dépend du produit, généralement 6 mois pour le neuf et 3 mois pour le reconditionné."}},
+    {"@type": "Question", "name": "Livrez-vous dans tout le Cameroun ?", "acceptedAnswer": {"@type": "Answer", "text": "Oui. Indiquez simplement votre ville, quartier et un repère précis dans le formulaire de commande pour faciliter la livraison."}},
+    {"@type": "Question", "name": "Comment suivre ma commande ?", "acceptedAnswer": {"@type": "Answer", "text": "Un numéro de suivi vous est communiqué dès l'expédition. Votre conseiller reste aussi joignable sur WhatsApp à tout moment."}},
+    {"@type": "Question", "name": "Puis-je laisser un avis sur un produit ?", "acceptedAnswer": {"@type": "Answer", "text": "Oui, directement depuis la fiche produit concernée — vous pouvez y ajouter votre note, un commentaire et des photos."}}
+  ]
+}
+</script>
 </head>
 <body>
 
 <header class="site-header">
   <div class="container nav-row">
     <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
-    <nav class="main-nav">
+    <nav class="main-nav" id="main-nav">
       <a href="index.html" class="nav-secondary">Accueil</a>
       <a href="produits.html">Produits</a>
       <a href="transport.html">Transport</a>
@@ -36,7 +54,7 @@
     </nav>
     <div class="nav-cta">
       <a href="compte.html" class="btn btn-outline account-nav-link" id="account-nav-link">Se connecter</a>
-      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+      <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
