@@ -508,6 +508,19 @@ nav.main-nav a:hover::after, nav.main-nav a.active::after{ width:100%; }
 .cat-pills .pill:hover{ border-color: var(--blue); color: var(--blue); }
 .cat-pills .pill.active{ background: var(--navy); border-color: var(--navy); color:#fff; }
 
+/* Options à choix (variantes de produit) */
+.pd-options{ margin: 18px 0; }
+.pd-option-group{ margin-bottom:16px; }
+.pd-option-group label{ display:block; font-weight:700; font-size:.85rem; color:var(--navy); margin-bottom:8px; }
+.pd-option-values{ display:flex; flex-wrap:wrap; gap:8px; }
+.pd-option-pill{
+  padding:9px 16px; border-radius:8px; border:1.5px solid var(--line); background:#fff;
+  font-size:.86rem; font-weight:600; color:var(--ink); cursor:pointer; transition: all .15s ease;
+}
+.pd-option-pill:hover{ border-color: var(--blue); }
+.pd-option-pill.selected{ border-color: var(--blue); background: var(--blue); color:#fff; }
+.pd-option-pill.unavailable{ opacity:.4; cursor:not-allowed; text-decoration:line-through; }
+
 .mt-0{margin-top:0;} .text-center{text-align:center;}
 .tag-list{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .tag{ background: var(--off-white); border:1px solid var(--line); font-size:.75rem; padding:4px 10px; border-radius:20px; color: var(--slate); }

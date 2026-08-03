@@ -74,10 +74,15 @@ document.addEventListener('sitedata:ready', async function(){
     const quantite = fd.get('quantite') || '1';
     const linkedProduct = produitId ? PRODUCTS.find(p => p.id === produitId) : null;
 
+    // Le prix unitaire est celui de la variante choisie sur la fiche produit si transmis,
+    // sinon le prix de base du produit lié.
+    const prixUnitaireParam = fd.get('prixUnitaire');
+    const prixUnitaire = prixUnitaireParam ? Number(prixUnitaireParam) : (linkedProduct ? linkedProduct.prix : null);
+
     let estimation = '';
-    if (linkedProduct && transportMode){
+    if (linkedProduct && transportMode && prixUnitaire != null){
       const frais = calcTransportCost(linkedProduct, transportMode.id, quantite);
-      const sousTotal = linkedProduct.prix * (Number(quantite) || 1);
+      const sousTotal = prixUnitaire * (Number(quantite) || 1);
       estimation = `Sous-total produit : ${formatFCFA(sousTotal)} | Frais transport estimés : ${formatFCFA(frais)} | Total estimé : ${formatFCFA(sousTotal + frais)}`;
     }
 
@@ -110,8 +115,8 @@ document.addEventListener('sitedata:ready', async function(){
     //    Se fait en arrière-plan : si ça échoue (ex: pas de réseau), la
     //    commande reste tout de même transmise via WhatsApp/e-mail ci-dessus.
     let coutProduit = null, coutTransport = null, coutTotal = null;
-    if (linkedProduct && transportMode){
-      coutProduit = linkedProduct.prix * (Number(quantite) || 1);
+    if (linkedProduct && transportMode && prixUnitaire != null){
+      coutProduit = prixUnitaire * (Number(quantite) || 1);
       coutTransport = calcTransportCost(linkedProduct, transportMode.id, quantite);
       coutTotal = coutProduit + (coutTransport || 0);
     }

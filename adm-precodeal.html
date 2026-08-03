@@ -43,6 +43,12 @@
   .spec-row input{ padding:9px 10px; border:1px solid var(--line); border-radius:6px; font-size:.88rem; }
   .spec-row button{ border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; color:#C0392B; min-width:40px; min-height:40px; }
 
+  .option-group-row{ display:grid; grid-template-columns: 1fr 2fr auto; gap:10px; margin-bottom:8px; }
+  .option-group-row input{ padding:9px 10px; border:1px solid var(--line); border-radius:6px; font-size:.88rem; }
+  .option-group-row button{ border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; color:#C0392B; min-width:40px; min-height:40px; }
+  @media (max-width:640px){ .option-group-row{ grid-template-columns: 1fr; } }
+  .variant-price-input{ width:130px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:.88rem; }
+
   .modal-overlay{
     display:none; position:fixed; inset:0; background: rgba(11,37,69,.55); z-index:300;
     align-items:flex-start; justify-content:center; padding: 40px 20px; overflow-y:auto;
@@ -383,6 +389,20 @@
         <div id="spec-rows"></div>
         <button type="button" class="btn btn-outline" id="btn-add-spec" style="font-size:.82rem; padding:8px 14px;">+ Ajouter une caractéristique</button>
       </div>
+
+      <div class="form-row" style="border-top:1px dashed var(--line); padding-top:18px;">
+        <label>Options à choix pour le client (facultatif)</label>
+        <p style="font-size:.8rem; color:var(--slate); margin:-4px 0 10px;">Ex : "Couleur" avec les valeurs "Rouge, Noir, Bleu". Le client choisira une valeur par option, et le prix pourra varier selon la combinaison choisie.</p>
+        <div id="option-groups-rows"></div>
+        <button type="button" class="btn btn-outline" id="btn-add-option-group" style="font-size:.82rem; padding:8px 14px;">+ Ajouter une option (ex : Couleur, Stockage)</button>
+      </div>
+
+      <div class="form-row" id="variants-section" style="display:none;">
+        <label>Prix par combinaison</label>
+        <button type="button" class="btn btn-outline" id="btn-generate-variants" style="font-size:.82rem; padding:8px 14px; margin-bottom:12px;">Générer / mettre à jour les combinaisons</button>
+        <div id="variants-table-wrap" class="table-wrap"></div>
+      </div>
+
       <div class="modal-actions">
         <button type="submit" class="btn btn-primary">Enregistrer le produit</button>
         <button type="button" class="btn btn-outline" id="btn-cancel-product">Annuler</button>

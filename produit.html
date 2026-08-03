@@ -24,7 +24,7 @@
 <header class="site-header">
   <div class="container nav-row">
     <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
-    <nav class="main-nav" id="main-nav">
+    <nav class="main-nav">
       <a href="index.html" class="nav-secondary">Accueil</a>
       <a href="produits.html" class="active">Produits</a>
       <a href="transport.html">Transport</a>
@@ -35,7 +35,7 @@
     </nav>
     <div class="nav-cta">
       <a href="compte.html" class="btn btn-outline account-nav-link" id="account-nav-link">Se connecter</a>
-      <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
@@ -232,13 +232,28 @@ document.addEventListener('sitedata:ready', function(){
     <div>
       <div class="cat" style="color:var(--slate-light); font-weight:700; text-transform:uppercase; font-size:.78rem;">${product.categorieLabel}</div>
       <h1 style="font-size:1.7rem;">${product.nom}</h1>
-      <div class="pd-price">${formatFCFA(product.prix)}</div>
+      <div class="pd-price" id="pd-price">${formatFCFA(product.prix)}</div>
       <div class="pd-ref">Réf. ${product.id.toUpperCase()} · ${product.etat}</div>
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
         ${stockBadgeHTML(product)}
         ${product.ratingCount ? `<span style="font-size:.85rem; color:#F5A623; font-weight:700;">★ ${product.ratingAvg.toFixed(1)} <span style="color:var(--slate-light); font-weight:500;">(${product.ratingCount} avis)</span></span>` : ''}
       </div>
       <p>${product.description}</p>
+
+      ${product.optionGroups && product.optionGroups.length ? `
+      <div class="pd-options" id="pd-options">
+        ${product.optionGroups.map(function(g){
+          return `<div class="pd-option-group">
+            <label>${g.nom}</label>
+            <div class="pd-option-values">
+              ${g.valeurs.map(function(v, vi){
+                return `<button type="button" class="pd-option-pill${vi===0 ? ' selected' : ''}" data-group="${g.nom}" data-value="${v}">${v}</button>`;
+              }).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      ` : ''}
 
       <ul class="pd-specs">
         ${specsHtml}${poidsHtml}${dimHtml}
@@ -329,6 +344,33 @@ document.addEventListener('sitedata:ready', function(){
     });
   }
 
+  // Sélection des options (variantes) — prix dynamique selon la combinaison choisie
+  let selectedOptions = {};
+  if (product.optionGroups && product.optionGroups.length){
+    product.optionGroups.forEach(function(g){ selectedOptions[g.nom] = g.valeurs[0]; });
+  }
+  function getCurrentPrice(){
+    if (product.optionGroups && product.optionGroups.length){
+      const p = findVariantPrice(product, selectedOptions);
+      return p != null ? p : product.prix;
+    }
+    return product.prix;
+  }
+  function variantLabel(){
+    if (!product.optionGroups || !product.optionGroups.length) return '';
+    return Object.keys(selectedOptions).map(k => `${k} : ${selectedOptions[k]}`).join(', ');
+  }
+  document.querySelectorAll('.pd-option-pill').forEach(function(pill){
+    pill.addEventListener('click', function(){
+      const group = pill.dataset.group;
+      document.querySelectorAll(`.pd-option-pill[data-group="${group}"]`).forEach(p => p.classList.remove('selected'));
+      pill.classList.add('selected');
+      selectedOptions[group] = pill.dataset.value;
+      document.getElementById('pd-price').textContent = formatFCFA(getCurrentPrice());
+      updateCTAs();
+    });
+  });
+
   // Bouton "Commander maintenant" → page commander.html pré-remplie
   function currentTransport(){
     const checked = document.querySelector('input[name="pd-transport"]:checked');
@@ -338,25 +380,28 @@ document.addEventListener('sitedata:ready', function(){
   function updateCTAs(){
     const qty = document.getElementById('pd-qty').value;
     const t = currentTransport();
+    const prixActuel = getCurrentPrice();
+    const variante = variantLabel();
+    const nomAvecVariante = variante ? `${product.nom} (${variante})` : product.nom;
 
     document.getElementById('pd-order-btn').href =
-      `commander.html?produitId=${encodeURIComponent(product.id)}&produit=${encodeURIComponent(product.nom)}&qty=${qty}&transport=${t.id}`;
+      `commander.html?produitId=${encodeURIComponent(product.id)}&produit=${encodeURIComponent(nomAvecVariante)}&prix=${prixActuel}&qty=${qty}&transport=${t.id}`;
 
     const texte = `Bonjour PrecoTech237, je souhaite commander :\n` +
-      `Produit : ${product.nom}\nQuantité : ${qty}\nTransport souhaité : ${t.label} (${t.delai})`;
+      `Produit : ${nomAvecVariante}\nPrix : ${formatFCFA(prixActuel)}\nQuantité : ${qty}\nTransport souhaité : ${t.label} (${t.delai})`;
     document.getElementById('pd-wa-btn').href = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(texte)}`;
 
     // Estimation des frais de transport selon poids/volume du produit
     const estimateEl = document.getElementById('transport-estimate');
     if (product.poidsKg || (product.longueurCm && product.largeurCm && product.hauteurCm)){
       const frais = calcTransportCost(product, t.id, qty);
-      const sousTotal = product.prix * qty;
+      const sousTotal = prixActuel * qty;
       const detailUnite = t.unite === 'CBM'
         ? `${calcCBM(product).toFixed(4)} CBM × ${qty} × ${Number(t.tarif).toLocaleString('fr-FR')} FCFA`
         : `${product.poidsKg} kg × ${qty} × ${Number(t.tarif).toLocaleString('fr-FR')} FCFA`;
 
       estimateEl.innerHTML = `
-        <div class="line"><span>Sous-total produit (${qty} × ${formatFCFA(product.prix)})</span><span>${formatFCFA(sousTotal)}</span></div>
+        <div class="line"><span>Sous-total produit (${qty} × ${formatFCFA(prixActuel)})</span><span>${formatFCFA(sousTotal)}</span></div>
         <div class="line"><span>Frais de transport estimés (${t.label})</span><span>${formatFCFA(frais)}</span></div>
         <div class="line total"><span>Total estimé</span><span>${formatFCFA(sousTotal + frais)}</span></div>
         <small>Détail transport : ${detailUnite}. Estimation indicative, confirmée par un conseiller avant expédition.</small>`;

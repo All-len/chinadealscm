@@ -37,6 +37,8 @@ function mapDbProduct(row){
     images: row.images || [],
     videoUrl: row.video_url || '',
     disponibilite: row.disponibilite || 'en_stock',
+    optionGroups: row.option_groups || [],
+    variantes: row.variantes || [],
     ratingAvg: 0,
     ratingCount: 0
   };
@@ -117,4 +119,40 @@ async function loadSiteData(){
   } catch(err){
     console.error('Erreur de chargement Supabase, utilisation des valeurs par défaut :', err);
   }
+}
+
+/* =========================================================
+   Variantes de produits (caractéristiques à choix, prix variable)
+   ========================================================= */
+
+/* Produit cartésien de toutes les valeurs possibles de chaque groupe.
+   Ex: [{nom:"Couleur",valeurs:["Rouge","Noir"]},{nom:"Stockage",valeurs:["128Go","256Go"]}]
+   -> [{Couleur:"Rouge",Stockage:"128Go"}, {Couleur:"Rouge",Stockage:"256Go"}, ...] */
+function buildVariantCombos(optionGroups){
+  if (!optionGroups || !optionGroups.length) return [];
+  return optionGroups.reduce(function(combos, group){
+    const next = [];
+    combos.forEach(function(combo){
+      group.valeurs.forEach(function(valeur){
+        next.push(Object.assign({}, combo, { [group.nom]: valeur }));
+      });
+    });
+    return next;
+  }, [{}]);
+}
+
+/* Compare deux combinaisons pour savoir si elles désignent la même variante */
+function combosEqual(a, b){
+  const keysA = Object.keys(a), keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every(function(k){ return a[k] === b[k]; });
+}
+
+/* Trouve le prix correspondant à une combinaison choisie par le client.
+   Renvoie null si aucune variante ne correspond (ne devrait pas arriver
+   si toutes les combinaisons ont été générées côté admin). */
+function findVariantPrice(product, selectedCombo){
+  if (!product.variantes || !product.variantes.length) return product.prix;
+  const match = product.variantes.find(function(v){ return combosEqual(v.combo, selectedCombo); });
+  return match ? Number(match.prix) : null;
 }
