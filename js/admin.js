@@ -16,6 +16,7 @@ let adminTransportModes = [];
 let editingProductId = null;
 let currentProductImages = [];
 let currentUploadFolder = '';
+let currentVariantes = [];
 
 /* ---------- Chargement depuis Supabase ---------- */
 async function loadAdminData(){
@@ -171,6 +172,8 @@ function initModal(){
   document.getElementById('btn-new-product').addEventListener('click', function(){ openProductModal(null); });
   document.getElementById('btn-cancel-product').addEventListener('click', closeProductModal);
   document.getElementById('btn-add-spec').addEventListener('click', function(){ addSpecRow('', ''); });
+  document.getElementById('btn-add-option-group').addEventListener('click', function(){ addOptionGroupRow('', ''); });
+  document.getElementById('btn-generate-variants').addEventListener('click', renderVariantsTable);
   document.getElementById('product-form').addEventListener('submit', submitProductForm);
   bindMediaUploads();
   bindCategorySelect();
@@ -235,6 +238,9 @@ function openProductModal(id){
   const form = document.getElementById('product-form');
   form.reset();
   document.getElementById('spec-rows').innerHTML = '';
+  document.getElementById('option-groups-rows').innerHTML = '';
+  document.getElementById('variants-table-wrap').innerHTML = '';
+  document.getElementById('variants-section').style.display = 'none';
   document.getElementById('p-video-status').textContent = '';
   document.getElementById('p-categorie-nouvelle').value = '';
 
@@ -257,6 +263,10 @@ function openProductModal(id){
     currentProductImages = (p.images || []).slice();
     currentUploadFolder = p.id;
     (p.specs || []).forEach(function(s){ addSpecRow(s[0], s[1]); });
+
+    currentVariantes = (p.variantes || []).slice();
+    (p.optionGroups || []).forEach(function(g){ addOptionGroupRow(g.nom, g.valeurs.join(', ')); });
+    if (p.optionGroups && p.optionGroups.length) renderVariantsTable();
   } else {
     document.getElementById('modal-title').textContent = 'Ajouter un produit';
     document.getElementById('p-id').value = '';
@@ -265,6 +275,7 @@ function openProductModal(id){
     currentProductImages = [];
     currentUploadFolder = 'new-' + Date.now();
     addSpecRow('', '');
+    currentVariantes = [];
   }
 
   renderImagePreviews();
@@ -286,6 +297,68 @@ function addSpecRow(label, value){
     <button type="button" title="Retirer">✕</button>`;
   row.querySelector('button').addEventListener('click', function(){ row.remove(); });
   wrap.appendChild(row);
+}
+
+/* ---------- Options à choix + variantes (prix par combinaison) ---------- */
+function addOptionGroupRow(nom, valeursStr){
+  const wrap = document.getElementById('option-groups-rows');
+  const row = document.createElement('div');
+  row.className = 'option-group-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Ex : Couleur" class="og-nom" value="${escapeHtml(nom || '')}">
+    <input type="text" placeholder="Valeurs séparées par des virgules, ex : Rouge, Noir, Bleu" class="og-valeurs" value="${escapeHtml(valeursStr || '')}">
+    <button type="button" title="Retirer">✕</button>`;
+  row.querySelector('button').addEventListener('click', function(){
+    row.remove();
+    if (!document.querySelectorAll('.option-group-row').length){
+      document.getElementById('variants-section').style.display = 'none';
+    }
+  });
+  wrap.appendChild(row);
+  document.getElementById('variants-section').style.display = 'block';
+}
+
+function readOptionGroupsFromForm(){
+  const groups = [];
+  document.querySelectorAll('.option-group-row').forEach(function(row){
+    const nom = row.querySelector('.og-nom').value.trim();
+    const valeurs = row.querySelector('.og-valeurs').value.split(',').map(v => v.trim()).filter(Boolean);
+    if (nom && valeurs.length) groups.push({ nom: nom, valeurs: valeurs });
+  });
+  return groups;
+}
+
+function renderVariantsTable(){
+  const groups = readOptionGroupsFromForm();
+  const section = document.getElementById('variants-section');
+  const wrap = document.getElementById('variants-table-wrap');
+
+  if (!groups.length){
+    section.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  section.style.display = 'block';
+
+  const combos = buildVariantCombos(groups);
+  const basePrix = Number(document.getElementById('p-prix').value) || 0;
+
+  wrap.innerHTML = `<table class="admin-table"><thead><tr>
+    ${groups.map(g => `<th>${escapeHtml(g.nom)}</th>`).join('')}
+    <th>Prix (FCFA)</th>
+  </tr></thead><tbody>
+    ${combos.map(function(combo, i){
+      const existing = currentVariantes.find(v => combosEqual(v.combo, combo));
+      const prix = existing ? existing.prix : basePrix;
+      return `<tr>
+        ${groups.map(g => `<td data-label="${escapeHtml(g.nom)}">${escapeHtml(combo[g.nom])}</td>`).join('')}
+        <td data-label="Prix"><input type="number" min="0" class="variant-price-input" data-combo-index="${i}" value="${prix}"></td>
+      </tr>`;
+    }).join('')}
+  </tbody></table>`;
+
+  // On mémorise les combinaisons courantes pour pouvoir les relire à la soumission
+  wrap.dataset.combos = JSON.stringify(combos);
 }
 
 async function submitProductForm(e){
@@ -316,6 +389,18 @@ async function submitProductForm(e){
     categorieLabel = getKnownCategories()[categorie] || categorie;
   }
 
+  // Options à choix + variantes (prix par combinaison)
+  const optionGroups = readOptionGroupsFromForm();
+  let variantes = [];
+  if (optionGroups.length){
+    const wrap = document.getElementById('variants-table-wrap');
+    const combos = wrap.dataset.combos ? JSON.parse(wrap.dataset.combos) : [];
+    wrap.querySelectorAll('.variant-price-input').forEach(function(input){
+      const idx = Number(input.dataset.comboIndex);
+      if (combos[idx]) variantes.push({ combo: combos[idx], prix: Number(input.value) || 0 });
+    });
+  }
+
   // Colonnes en snake_case pour correspondre au schéma Supabase
   const row = {
     id: existingId || (slugify(nom) + '-' + Date.now().toString().slice(-5)),
@@ -333,7 +418,9 @@ async function submitProductForm(e){
     largeur_cm: document.getElementById('p-largeur').value ? Number(document.getElementById('p-largeur').value) : null,
     hauteur_cm: document.getElementById('p-hauteur').value ? Number(document.getElementById('p-hauteur').value) : null,
     images: currentProductImages,
-    video_url: document.getElementById('p-video-url').value.trim() || null
+    video_url: document.getElementById('p-video-url').value.trim() || null,
+    option_groups: optionGroups,
+    variantes: variantes
   };
 
   const submitBtn = e.target.querySelector('button[type="submit"]');

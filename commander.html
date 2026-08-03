@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
 <title>Passer commande — PrecoTech237</title>
 <link rel="icon" type="image/png" href="images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
@@ -25,7 +24,7 @@
 <header class="site-header">
   <div class="container nav-row">
     <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
-    <nav class="main-nav" id="main-nav">
+    <nav class="main-nav">
       <a href="index.html" class="nav-secondary">Accueil</a>
       <a href="produits.html">Produits</a>
       <a href="transport.html">Transport</a>
@@ -36,7 +35,7 @@
     </nav>
     <div class="nav-cta">
       <a href="compte.html" class="btn btn-outline account-nav-link" id="account-nav-link">Se connecter</a>
-      <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
@@ -85,6 +84,7 @@
             <label>Produit souhaité <span class="req">*</span></label>
             <input type="text" name="produit" required placeholder="Ex : HP Pavilion 15 i7/16Go/512Go">
             <input type="hidden" name="produitId" id="produitId-field">
+            <input type="hidden" name="prixUnitaire" id="prix-field">
           </div>
           <div class="form-row">
             <label>Quantité <span class="req">*</span></label>
@@ -189,15 +189,20 @@
     const qtyParam = getUrlParam('qty');
     const transportParam = getUrlParam('transport');
     const produitIdParam = getUrlParam('produitId');
+    const prixParam = getUrlParam('prix');
     if (qtyParam) document.querySelector('[name="quantite"]').value = qtyParam;
     if (transportParam){
       const radio = document.querySelector(`input[name="transport"][value="${transportParam}"]`);
       if (radio) radio.checked = true;
     }
     if (produitIdParam) document.getElementById('produitId-field').value = produitIdParam;
+    if (prixParam) document.getElementById('prix-field').value = prixParam;
 
     // Estimation des frais de transport (seulement possible si on connaît le produit exact)
+    // Le prix utilisé est celui de la variante choisie sur la fiche produit (?prix=...) si présent,
+    // sinon le prix de base du produit.
     const linkedProduct = produitIdParam ? PRODUCTS.find(p => p.id === produitIdParam) : null;
+    const effectivePrix = prixParam ? Number(prixParam) : (linkedProduct ? linkedProduct.prix : null);
     const estimateEl = document.getElementById('order-transport-estimate');
     const qtyField = document.querySelector('[name="quantite"]');
 
@@ -207,11 +212,11 @@
       const t = TRANSPORT_MODES.find(m => m.id === (checked ? checked.value : 'aerien-normal'));
       const qty = Number(qtyField.value) || 1;
       const frais = calcTransportCost(linkedProduct, t.id, qty);
-      const sousTotal = linkedProduct.prix * qty;
+      const sousTotal = effectivePrix * qty;
 
       estimateEl.style.display = 'block';
       estimateEl.innerHTML = `
-        <div class="line"><span>Sous-total produit (${qty} × ${formatFCFA(linkedProduct.prix)})</span><span>${formatFCFA(sousTotal)}</span></div>
+        <div class="line"><span>Sous-total produit (${qty} × ${formatFCFA(effectivePrix)})</span><span>${formatFCFA(sousTotal)}</span></div>
         <div class="line"><span>Frais de transport estimés (${t.label})</span><span>${formatFCFA(frais)}</span></div>
         <div class="line total"><span>Total estimé</span><span>${formatFCFA(sousTotal + frais)}</span></div>
         <small>Estimation indicative, confirmée par un conseiller avant expédition.</small>`;
