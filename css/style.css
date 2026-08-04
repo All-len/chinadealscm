@@ -100,6 +100,7 @@ nav.main-nav a.active{ color: var(--green-dark); }
    Accueil, Comment ça marche et À propos restent accessibles via le logo, le footer et le menu mobile. */
 @media (min-width: 861px){
   nav.main-nav a.nav-secondary{ display:none; }
+  .mobile-account-link{ display:none; }
 }
 .nav-cta{ display:flex; align-items:center; gap:12px; }
 .burger{ display:none; background:none; border:none; cursor:pointer; padding:6px; z-index:210; position:relative; }
