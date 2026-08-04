@@ -92,6 +92,8 @@ async function showAdminApp(){
   initTabs();
   initModal();
   initOrderModal();
+  bindBulkImportForm();
+  bindBulkPhotoAssociation();
   document.querySelectorAll('[data-icon]').forEach(function(el){
     const name = el.getAttribute('data-icon');
     if (ICONS[name]) el.innerHTML = ICONS[name];
@@ -230,6 +232,309 @@ function bindCategorySelect(){
     } else {
       newInput.style.display = 'none';
     }
+  });
+}
+
+/* =========================================================
+   Import en masse de produits (copier-coller depuis Excel/Sheets)
+   ========================================================= */
+
+// Intitulés de colonnes reconnus (accents/espaces/majuscules ignorés) -> nom de colonne interne
+const BULK_FIELD_ALIASES = {
+  nom:'nom', nomduproduit:'nom', produit:'nom', titre:'nom',
+  categorie:'categorie', categorielabel:'categorie',
+  prix:'prix', prixfcfa:'prix',
+  etat:'etat',
+  disponibilite:'disponibilite', stock:'disponibilite',
+  badge:'badge',
+  description:'description', desc:'description',
+  poids:'poids_kg', poidskg:'poids_kg',
+  longueur:'longueur_cm', longueurcm:'longueur_cm',
+  largeur:'largeur_cm', largeurcm:'largeur_cm',
+  hauteur:'hauteur_cm', hauteurcm:'hauteur_cm',
+  images:'images', photos:'images', image:'images', photo:'images'
+};
+const BULK_ALLOWED_DISPO = ['en_stock', 'sur_commande', 'rupture'];
+
+function bulkCompactKey(s){
+  return s.toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+// Excel/Sheets colle avec des tabulations ; on garde ; puis , en repli (CSV export)
+function bulkSplitLine(line){
+  if (line.indexOf('\t') !== -1) return line.split('\t');
+  if (line.indexOf(';') !== -1) return line.split(';');
+  return line.split(',');
+}
+
+function bulkToNumberOrNull(v){
+  if (v === undefined || v === null || v.toString().trim() === '') return null;
+  const n = Number(v.toString().trim().replace(',', '.'));
+  return isFinite(n) ? n : null;
+}
+
+function parseBulkInput(text){
+  const lines = text.split(/\r?\n/).filter(function(l){ return l.trim() !== ''; });
+  if (!lines.length) return { rows: [], error: 'Aucune donnée détectée — collez au moins une ligne d\'en-tête et une ligne de produit.' };
+
+  const headerCells = bulkSplitLine(lines[0]);
+  const fields = headerCells.map(function(h){ return BULK_FIELD_ALIASES[bulkCompactKey(h)] || null; });
+
+  if (fields.indexOf('nom') === -1 || fields.indexOf('categorie') === -1 || fields.indexOf('prix') === -1){
+    return { rows: [], error: 'Colonnes obligatoires manquantes dans l\'en-tête : il faut au moins "nom", "categorie" et "prix".' };
+  }
+
+  // Réutilise une catégorie existante si le libellé tapé correspond à une catégorie déjà en base
+  const knownCategories = getKnownCategories(); // { slug: label }
+  const labelToSlug = {};
+  Object.keys(knownCategories).forEach(function(slug){
+    labelToSlug[bulkCompactKey(knownCategories[slug])] = slug;
+  });
+
+  const rows = lines.slice(1).map(function(line, idx){
+    const cells = bulkSplitLine(line);
+    const data = {};
+    fields.forEach(function(field, i){
+      if (field) data[field] = (cells[i] || '').trim();
+    });
+
+    const errors = [];
+    const nom = data.nom || '';
+    const categorieLabel = data.categorie || '';
+    const prixRaw = (data.prix || '').replace(/[^\d.,-]/g, '').replace(',', '.');
+    const prix = Number(prixRaw);
+
+    if (!nom) errors.push('Nom manquant');
+    if (!categorieLabel) errors.push('Catégorie manquante');
+    if (!data.prix || !isFinite(prix) || prix <= 0) errors.push('Prix invalide');
+
+    let disponibilite = (data.disponibilite || 'en_stock').trim();
+    if (!BULK_ALLOWED_DISPO.includes(disponibilite)) disponibilite = 'en_stock';
+
+    const categorieKey = bulkCompactKey(categorieLabel);
+    const categorieSlug = labelToSlug[categorieKey] || slugify(categorieLabel || 'categorie');
+    const finalCategorieLabel = knownCategories[categorieSlug] || categorieLabel;
+
+    const images = (data.images || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+
+    const row = {
+      id: slugify(nom || 'produit') + '-' + Date.now().toString().slice(-5) + '-' + idx,
+      nom: nom,
+      categorie: categorieSlug,
+      categorie_label: finalCategorieLabel,
+      prix: isFinite(prix) ? prix : 0,
+      etat: data.etat || '',
+      disponibilite: disponibilite,
+      badge: data.badge || '',
+      description: data.description || '',
+      specs: [],
+      poids_kg: bulkToNumberOrNull(data.poids_kg),
+      longueur_cm: bulkToNumberOrNull(data.longueur_cm),
+      largeur_cm: bulkToNumberOrNull(data.largeur_cm),
+      hauteur_cm: bulkToNumberOrNull(data.hauteur_cm),
+      images: images,
+      video_url: null,
+      option_groups: [],
+      variantes: []
+    };
+
+    return { lineNumber: idx + 2, row: row, images: images, errors: errors, valid: errors.length === 0 };
+  });
+
+  return { rows: rows, error: null };
+}
+
+let bulkParsedRows = [];
+
+function renderBulkPreviewTable(){
+  const tbody = document.getElementById('bulk-preview-tbody');
+  const validRows = bulkParsedRows.filter(function(r){ return r.valid; });
+
+  document.getElementById('bulk-preview-count').textContent = validRows.length;
+  document.getElementById('bulk-preview-total').textContent = bulkParsedRows.length;
+
+  tbody.innerHTML = bulkParsedRows.map(function(r){
+    const statusHtml = r.valid
+      ? '<span style="color:var(--green-dark); font-weight:700;">✓ OK</span>'
+      : '<span style="color:#C0272D; font-weight:700;">✗ ' + escapeHtml(r.errors.join(', ')) + '</span>';
+    const prixTxt = r.row.prix ? Number(r.row.prix).toLocaleString('fr-FR') + ' FCFA' : '—';
+    return '<tr>' +
+      '<td data-label="Ligne">' + r.lineNumber + '</td>' +
+      '<td data-label="Nom">' + escapeHtml(r.row.nom || '—') + '</td>' +
+      '<td data-label="Catégorie">' + escapeHtml(r.row.categorie_label || '—') + '</td>' +
+      '<td data-label="Prix">' + prixTxt + '</td>' +
+      '<td data-label="Images">' + r.row.images.length + ' image(s)</td>' +
+      '<td data-label="Statut">' + statusHtml + '</td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('btn-bulk-confirm').style.display = validRows.length ? 'inline-flex' : 'none';
+  return validRows;
+}
+
+function bindBulkImportForm(){
+  const previewBtn = document.getElementById('btn-bulk-preview');
+  const confirmBtn = document.getElementById('btn-bulk-confirm');
+  const noteEl = document.getElementById('bulk-import-note');
+  const previewWrap = document.getElementById('bulk-preview-wrap');
+  if (!previewBtn || previewBtn.dataset.bound === '1') return;
+  previewBtn.dataset.bound = '1';
+
+  function showNote(el, message, isError){
+    el.textContent = message;
+    el.style.color = isError ? '#C0272D' : 'var(--green-dark)';
+    el.style.display = 'block';
+  }
+
+  previewBtn.addEventListener('click', function(){
+    noteEl.style.display = 'none';
+    const parsed = parseBulkInput(document.getElementById('bulk-import-input').value);
+
+    if (parsed.error){
+      previewWrap.style.display = 'none';
+      showNote(noteEl, parsed.error, true);
+      return;
+    }
+
+    bulkParsedRows = parsed.rows;
+    const validRows = renderBulkPreviewTable();
+    previewWrap.style.display = 'block';
+
+    // Réinitialise l'étape 2 (photos) à chaque nouvel aperçu, pour éviter d'associer
+    // des photos déjà uploadées à un aperçu périmé
+    document.getElementById('bulk-images-upload').value = '';
+    document.getElementById('bulk-photo-status').style.display = 'none';
+
+    if (!bulkParsedRows.length){
+      showNote(noteEl, 'Aucune ligne de produit trouvée sous l\'en-tête.', true);
+    } else if (!validRows.length){
+      showNote(noteEl, 'Aucune ligne valide à importer — corrigez les erreurs ci-dessus puis réessayez.', true);
+    }
+  });
+
+  confirmBtn.addEventListener('click', async function(){
+    const validRows = bulkParsedRows.filter(function(r){ return r.valid; }).map(function(r){ return r.row; });
+    if (!validRows.length) return;
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Import en cours...';
+
+    const { error } = await supabaseClient.from('products').upsert(validRows);
+
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "Confirmer l'import";
+
+    if (error){
+      showNote(noteEl, 'Erreur lors de l\'import : ' + error.message, true);
+      return;
+    }
+
+    showNote(noteEl, '✓ ' + validRows.length + ' produit(s) importé(s) avec succès — déjà visibles sur le site.', false);
+
+    document.getElementById('bulk-import-input').value = '';
+    previewWrap.style.display = 'none';
+    confirmBtn.style.display = 'none';
+    bulkParsedRows = [];
+
+    await loadAdminData();
+    renderProductTable();
+  });
+}
+
+/* ---------- Étape 2 : association de photos en masse par nom de fichier ---------- */
+
+// Retire l'extension et un éventuel numéro final ("-1", "_2", " (3)") puis normalise
+// comme slugify() pour comparer au nom du produit de façon fiable
+function bulkExtractPhotoKey(filename){
+  const noExt = filename.replace(/\.[a-zA-Z0-9]+$/, '');
+  const noNum = noExt.replace(/[-_\s]*\(?\d+\)?$/, '');
+  return slugify(noNum || noExt);
+}
+
+// Numéro final du fichier (pour garder l'ordre 1, 2, 3... des photos d'un même produit)
+function bulkExtractPhotoIndex(filename){
+  const noExt = filename.replace(/\.[a-zA-Z0-9]+$/, '');
+  const m = noExt.match(/(\d+)\)?$/);
+  return m ? Number(m[1]) : 0;
+}
+
+function bindBulkPhotoAssociation(){
+  const assocBtn = document.getElementById('btn-bulk-assoc-photos');
+  if (!assocBtn || assocBtn.dataset.bound === '1') return;
+  assocBtn.dataset.bound = '1';
+
+  const fileInput = document.getElementById('bulk-images-upload');
+  const statusEl = document.getElementById('bulk-photo-status');
+
+  assocBtn.addEventListener('click', async function(){
+    statusEl.style.display = 'none';
+
+    if (!bulkParsedRows.length){
+      alert('Cliquez d\'abord sur « Prévisualiser » (étape 1) avant d\'associer des photos.');
+      return;
+    }
+    const files = Array.from(fileInput.files || []);
+    if (!files.length){
+      alert('Sélectionnez d\'abord une ou plusieurs photos.');
+      return;
+    }
+
+    // Regroupe les fichiers par produit (clé issue du nom de fichier), triés par numéro
+    const groups = {};
+    files.forEach(function(file){
+      const key = bulkExtractPhotoKey(file.name);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(file);
+    });
+    Object.keys(groups).forEach(function(key){
+      groups[key].sort(function(a, b){ return bulkExtractPhotoIndex(a.name) - bulkExtractPhotoIndex(b.name); });
+    });
+
+    assocBtn.disabled = true;
+    assocBtn.textContent = 'Association en cours...';
+
+    const matchedKeys = new Set();
+    let uploadedCount = 0, failedCount = 0;
+
+    for (const r of bulkParsedRows){
+      if (!r.valid) continue;
+      const rowKey = slugify(r.row.nom || '');
+      const group = groups[rowKey];
+      if (!group || !group.length) continue;
+
+      matchedKeys.add(rowKey);
+
+      for (const file of group){
+        const path = `${r.row.id}/${Date.now()}-${safeFileName(file.name)}`;
+        const { error: upErr } = await supabaseClient.storage.from('product-images').upload(path, file);
+        if (upErr){ console.error('Erreur upload', file.name, upErr); failedCount++; continue; }
+        const { data: pub } = supabaseClient.storage.from('product-images').getPublicUrl(path);
+        if (pub && pub.publicUrl){
+          r.row.images.push(pub.publicUrl);
+          uploadedCount++;
+        }
+      }
+    }
+
+    assocBtn.disabled = false;
+    assocBtn.textContent = 'Associer les photos aux produits';
+
+    renderBulkPreviewTable();
+
+    const unmatchedGroups = Object.keys(groups).filter(function(k){ return !matchedKeys.has(k); });
+    let message = '✓ ' + uploadedCount + ' photo(s) associée(s) et envoyée(s) à ' + matchedKeys.size + ' produit(s).';
+    let isError = false;
+    if (failedCount) message += ' (' + failedCount + ' échec(s) d\'envoi, voir la console.)';
+    if (unmatchedGroups.length){
+      message += ' Aucun produit ne correspond à : ' + unmatchedGroups.map(function(k){ return groups[k][0].name; }).join(', ') + ' — vérifiez le nom du fichier par rapport au nom du produit.';
+      isError = true;
+    }
+
+    statusEl.textContent = message;
+    statusEl.style.color = isError ? '#C0272D' : 'var(--green-dark)';
+    statusEl.style.display = 'block';
   });
 }
 

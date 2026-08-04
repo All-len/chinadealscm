@@ -169,6 +169,7 @@
       <div class="admin-tabs">
         <button class="active" data-tab="commandes">Commandes</button>
         <button data-tab="produits">Produits</button>
+        <button data-tab="import">Import en masse</button>
         <button data-tab="contact">Informations du site</button>
         <button data-tab="transport">Tarifs transport</button>
         <button data-tab="avis">Avis clients</button>
@@ -226,6 +227,61 @@
             </thead>
             <tbody id="product-tbody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ONGLET IMPORT EN MASSE -->
+      <div id="tab-import" class="tab-panel" style="display:none;">
+        <h2>Import en masse de produits</h2>
+        <p>Préparez vos produits dans Excel ou Google Sheets (une ligne d'en-tête, puis une ligne par produit), puis copiez-collez l'ensemble — en-tête comprise — dans la zone ci-dessous.</p>
+
+        <div class="banner-info" style="background:var(--off-white); border-color:var(--line); color:var(--slate); font-size:.85rem; margin-bottom:24px;">
+          <b>Colonnes reconnues</b> (l'ordre n'a pas d'importance, seul l'intitulé compte) :<br>
+          <code>nom</code> · <code>categorie</code> · <code>prix</code> · <code>etat</code> · <code>disponibilite</code> (en_stock / sur_commande / rupture) · <code>badge</code> · <code>description</code> · <code>poids_kg</code> · <code>longueur_cm</code> · <code>largeur_cm</code> · <code>hauteur_cm</code> · <code>images</code> (plusieurs liens séparés par des virgules, facultatif si vous utilisez l'étape 2 ci-dessous)<br>
+          Seules les colonnes <b>nom</b>, <b>categorie</b> et <b>prix</b> sont obligatoires. Une catégorie tapée à l'identique d'une catégorie existante sera automatiquement réutilisée (sinon elle est créée).
+        </div>
+
+        <div class="form-card">
+          <h3 style="margin-top:0; font-size:1rem;">Étape 1 — Coller vos produits</h3>
+          <div class="form-row">
+            <label>Coller vos produits ici (avec la ligne d'en-tête)</label>
+            <textarea id="bulk-import-input" rows="8" placeholder="Collez ici les lignes copiées depuis Excel ou Google Sheets (en-tête en première ligne)."></textarea>
+          </div>
+          <button type="button" class="btn btn-outline" id="btn-bulk-preview">Prévisualiser</button>
+          <p class="form-note" id="bulk-import-note" style="display:none;"></p>
+        </div>
+
+        <div id="bulk-preview-wrap" style="display:none; margin-top:24px;">
+          <h3 style="font-size:1rem;">Aperçu (<span id="bulk-preview-count">0</span> ligne(s) valide(s) sur <span id="bulk-preview-total">0</span>)</h3>
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Ligne</th>
+                  <th>Nom</th>
+                  <th>Catégorie</th>
+                  <th>Prix</th>
+                  <th>Images</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody id="bulk-preview-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="form-card" style="margin-top:24px;">
+            <h3 style="margin-top:0; font-size:1rem;">Étape 2 (facultative) — Associer des photos</h3>
+            <p style="font-size:.85rem; color:var(--slate);">
+              Nommez chaque fichier en commençant par le nom du produit tel que saisi ci-dessus, suivi d'un numéro pour plusieurs photos — ex : <code>HP Pavilion 15-1.jpg</code>, <code>HP Pavilion 15-2.jpg</code>. Accents, majuscules et espaces n'ont pas d'importance. Sélectionnez en une fois toutes les photos de tous vos produits ; elles seront automatiquement réparties.
+            </p>
+            <div class="form-row">
+              <input type="file" id="bulk-images-upload" accept="image/*" multiple>
+            </div>
+            <button type="button" class="btn btn-outline" id="btn-bulk-assoc-photos">Associer les photos aux produits</button>
+            <p class="form-note" id="bulk-photo-status" style="display:none;"></p>
+          </div>
+
+          <button type="button" class="btn btn-primary" id="btn-bulk-confirm" style="display:none; margin-top:24px;">Confirmer l'import</button>
         </div>
       </div>
 

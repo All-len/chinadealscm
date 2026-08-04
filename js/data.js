@@ -99,9 +99,57 @@ function calcTransportCost(product, transportId, quantite){
 }
 
 /* =========================================================
+   Cache inter-pages (sessionStorage)
+   ---------------------------------------------------------
+   Le site n'est pas une SPA : chaque clic sur un lien recharge
+   la page, donc sans cache on retélécharge le même catalogue
+   (mêmes filtres, même produit...) à chaque navigation. On met
+   ici en cache les réponses Supabase avec une durée de vie courte
+   (les prix/stocks/avis peuvent changer) et scopée à l'onglet
+   (sessionStorage se vide à la fermeture, contrairement à
+   localStorage) — donc jamais de données périmées d'une visite
+   à l'autre.
+   ========================================================= */
+const CACHE_PREFIX = 'pt237:';
+const CACHE_TTL = {
+  settings: 10 * 60 * 1000,   // 10 min — change rarement
+  categories: 10 * 60 * 1000, // 10 min — change rarement
+  products: 3 * 60 * 1000     // 3 min — prix/stock/avis peuvent bouger
+};
+
+function cacheGet(key){
+  try{
+    const raw = sessionStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const { value, expiresAt } = JSON.parse(raw);
+    if (Date.now() > expiresAt){
+      sessionStorage.removeItem(CACHE_PREFIX + key);
+      return null;
+    }
+    return value;
+  } catch(err){
+    return null; // navigation privée, quota dépassé... on ignore, le cache n'est qu'un bonus
+  }
+}
+
+function cacheSet(key, value, ttlMs){
+  try{
+    sessionStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ value, expiresAt: Date.now() + ttlMs }));
+  } catch(err){
+    // quota sessionStorage dépassé ou navigation privée : on continue sans cache
+  }
+}
+
+/* =========================================================
    1) Données LÉGÈRES — appelées sur TOUTES les pages
    ========================================================= */
 async function loadSettings(){
+  const cached = cacheGet('settings');
+  if (cached){
+    Object.assign(CONTACT, cached.contact || {});
+    if (cached.transportModes) TRANSPORT_MODES = cached.transportModes;
+    return;
+  }
   try{
     const { data: settings, error } = await supabaseClient
       .from('site_settings')
@@ -111,6 +159,7 @@ async function loadSettings(){
       if (row.key === 'contact') Object.assign(CONTACT, row.value);
       if (row.key === 'transport_modes') TRANSPORT_MODES = row.value;
     });
+    cacheSet('settings', { contact: CONTACT, transportModes: TRANSPORT_MODES }, CACHE_TTL.settings);
   } catch(err){
     console.error('Erreur de chargement des réglages (Supabase), valeurs par défaut utilisées :', err);
   }
@@ -153,6 +202,8 @@ async function attachRatings(products){
    Colonnes ultra-légères, pas de select('*').
    ========================================================= */
 async function fetchCategories(){
+  const cached = cacheGet('categories');
+  if (cached) return cached;
   try{
     const { data, error } = await supabaseClient
       .from('products')
@@ -162,6 +213,7 @@ async function fetchCategories(){
     (data || []).forEach(function(row){
       if (row.categorie && !map[row.categorie]) map[row.categorie] = row.categorie_label || row.categorie;
     });
+    cacheSet('categories', map, CACHE_TTL.categories);
     return map; // { 'laptops': 'Laptops', ... }
   } catch(err){
     console.error('Erreur de chargement des catégories :', err);
@@ -176,6 +228,10 @@ async function fetchCategories(){
    côté navigateur), et seule la page demandée est transférée.
    ========================================================= */
 async function fetchProductsPage({ categorie = 'all', recherche = '', tri = 'default', page = 0 } = {}){
+  const cacheKey = 'products:' + JSON.stringify({ categorie, recherche: recherche.trim().toLowerCase(), tri, page });
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
   try{
     let query = supabaseClient
       .from('products')
@@ -203,11 +259,13 @@ async function fetchProductsPage({ categorie = 'all', recherche = '', tri = 'def
     const products = (data || []).map(mapDbProduct);
     await attachRatings(products);
 
-    return {
+    const result = {
       products,
       total: count || 0,
       hasMore: (from + products.length) < (count || 0)
     };
+    cacheSet(cacheKey, result, CACHE_TTL.products);
+    return result;
   } catch(err){
     console.error('Erreur de chargement du catalogue :', err);
     return { products: [], total: 0, hasMore: false };
@@ -227,6 +285,10 @@ async function fetchFeaturedProducts(categorie = 'all', limit = 8){
    ========================================================= */
 async function fetchProductById(id){
   if (!id) return null;
+  const cacheKey = 'product:' + id;
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
   try{
     const { data, error } = await supabaseClient
       .from('products')
@@ -237,6 +299,7 @@ async function fetchProductById(id){
     if (!data) return null;
     const product = mapDbProduct(data);
     await attachRatings([product]);
+    cacheSet(cacheKey, product, CACHE_TTL.products);
     return product;
   } catch(err){
     console.error('Erreur de chargement du produit :', err);
@@ -248,6 +311,10 @@ async function fetchProductById(id){
    7) Produits similaires (même catégorie, colonnes allégées)
    ========================================================= */
 async function fetchSimilarProducts(categorie, excludeId, limit = 4){
+  const cacheKey = 'similar:' + categorie + ':' + excludeId + ':' + limit;
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
   try{
     const { data, error } = await supabaseClient
       .from('products')
@@ -258,6 +325,7 @@ async function fetchSimilarProducts(categorie, excludeId, limit = 4){
     if (error) throw error;
     const products = (data || []).map(mapDbProduct);
     await attachRatings(products);
+    cacheSet(cacheKey, products, CACHE_TTL.products);
     return products;
   } catch(err){
     console.error('Erreur de chargement des produits similaires :', err);
