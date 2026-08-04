@@ -72,7 +72,9 @@ document.addEventListener('sitedata:ready', async function(){
     const transportMode = TRANSPORT_MODES.find(t => t.id === (transportInput ? transportInput.value : ''));
     const produitId = fd.get('produitId');
     const quantite = fd.get('quantite') || '1';
-    const linkedProduct = produitId ? PRODUCTS.find(p => p.id === produitId) : null;
+    // Chargé par commander.html (fetchProductById) au chargement de la page,
+    // plutôt que recherché dans un catalogue global non chargé en entier.
+    const linkedProduct = produitId ? window.linkedProduct : null;
 
     // Le prix unitaire est celui de la variante choisie sur la fiche produit si transmis,
     // sinon le prix de base du produit lié.

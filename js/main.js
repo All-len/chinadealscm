@@ -131,27 +131,14 @@ async function renderAccountNav(){
   links.forEach(function(el){ el.textContent = label; el.href = 'compte.html'; });
 }
 
-/* --- Catégories dynamiques (dérivées des produits réellement en catalogue) --- */
-function getDynamicCategories(){
-  const map = {};
-  PRODUCTS.forEach(function(p){
-    if (p.categorie && !map[p.categorie]) map[p.categorie] = p.categorieLabel || p.categorie;
-  });
-  return map; // { 'laptops': 'Laptops', ... }
-}
-
-/* --- Filtrage du catalogue (utilisé sur produits.html) --- */
-function filterProducts(categorie, tri, recherche){
-  let list = [...PRODUCTS];
-  if (categorie && categorie !== 'all') list = list.filter(p => p.categorie === categorie);
-  if (recherche && recherche.trim()){
-    const q = recherche.trim().toLowerCase();
-    list = list.filter(p => p.nom.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-  }
-  if (tri === 'prix-asc') list.sort((a,b)=>a.prix-b.prix);
-  if (tri === 'prix-desc') list.sort((a,b)=>b.prix-a.prix);
-  return list;
-}
+/* NOTE : les anciennes fonctions getDynamicCategories()/filterProducts()
+   scannaient le tableau global PRODUCTS entier côté navigateur. Avec un
+   catalogue de 400+ produits, ce tableau n'est plus chargé en une fois
+   (voir js/data.js). Utilisez à la place :
+     - fetchCategories()      → catégories disponibles
+     - fetchProductsPage()    → catalogue filtré/trié/paginé côté serveur
+     - fetchFeaturedProducts()→ produits mis en avant (accueil)
+*/
 
 /* --- Lecture d'un paramètre d'URL --- */
 function getUrlParam(name){

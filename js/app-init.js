@@ -1,11 +1,18 @@
 /* =========================================================
    PrecoTech237 — Démarrage de la page
-   Charge les données (produits, contact, transport) depuis
-   Supabase, puis prévient le reste du site que c'est prêt.
+   ---------------------------------------------------------
+   Ne charge QUE les données légères (contact + tarifs transport)
+   sur TOUTES les pages. Le catalogue produit n'est PAS chargé ici :
+   chaque page qui en a besoin (index.html, produits.html,
+   produit.html, commander.html) le charge elle-même via les
+   fonctions fetchProductsPage / fetchFeaturedProducts /
+   fetchProductById / fetchSimilarProducts définies dans js/data.js,
+   une fois que l'évènement 'sitedata:ready' (déclenché ici) a eu
+   lieu.
    ========================================================= */
 
 document.addEventListener('DOMContentLoaded', async function(){
-  await loadSiteData();
+  await loadSettings();
   renderWaFloat();
   renderContactInfo();
   renderStaticWaLinks();

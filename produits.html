@@ -74,6 +74,11 @@
     </div>
 
     <div class="grid-4" id="catalog-grid"></div>
+    <p id="catalog-count" style="text-align:center; color:var(--slate-light); font-size:.85rem; margin-top:18px;"></p>
+    <div style="text-align:center; margin-top:10px;">
+      <button type="button" id="load-more-btn" class="btn btn-outline" style="display:none;">Voir plus de produits</button>
+    </div>
+    <p id="catalog-loading" style="text-align:center; color:var(--slate-light);">Chargement du catalogue...</p>
 
   </div>
 </section>
@@ -128,19 +133,20 @@
 <script src="js/main.js"></script>
 <script src="js/app-init.js"></script>
 <script>
-  document.addEventListener('sitedata:ready', function(){
+  document.addEventListener('sitedata:ready', async function(){
     const grid = document.getElementById('catalog-grid');
     const catSelect = document.getElementById('filter-cat');
     const sortSelect = document.getElementById('filter-sort');
     const searchInput = document.getElementById('filter-search');
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    const loadingEl = document.getElementById('catalog-loading');
+    const countEl = document.getElementById('catalog-count');
 
-    function render(){
-      const list = filterProducts(catSelect.value, sortSelect.value, searchInput.value);
-      grid.innerHTML = list.map(productCardHTML).join('') || '<p>Aucun produit ne correspond à votre recherche.</p>';
-    }
+    let currentPage = 0;
+    let requestToken = 0; // évite qu'une vieille réponse réseau écrase un résultat plus récent
 
-    // Catégories dynamiques : reflète exactement les catégories utilisées par vos produits
-    const categories = getDynamicCategories();
+    // Catégories disponibles (requête légère, colonnes catégorie uniquement)
+    const categories = await fetchCategories();
     Object.keys(categories).forEach(function(key){
       const opt = document.createElement('option');
       opt.value = key;
@@ -152,10 +158,53 @@
     const catParam = getUrlParam('cat');
     if (catParam) catSelect.value = catParam;
 
-    catSelect.addEventListener('change', render);
-    sortSelect.addEventListener('change', render);
-    searchInput.addEventListener('input', render);
-    render();
+    async function loadPage(page, { append = false } = {}){
+      const myToken = ++requestToken;
+      loadingEl.style.display = 'block';
+      loadMoreBtn.disabled = true;
+
+      const { products, total, hasMore } = await fetchProductsPage({
+        categorie: catSelect.value,
+        recherche: searchInput.value,
+        tri: sortSelect.value,
+        page: page
+      });
+
+      if (myToken !== requestToken) return; // une recherche plus récente a déjà été lancée
+
+      loadingEl.style.display = 'none';
+      loadMoreBtn.disabled = false;
+
+      const html = products.map(productCardHTML).join('');
+      if (append){
+        grid.insertAdjacentHTML('beforeend', html);
+      } else {
+        grid.innerHTML = html || '<p>Aucun produit ne correspond à votre recherche.</p>';
+      }
+
+      currentPage = page;
+      loadMoreBtn.style.display = hasMore ? 'inline-flex' : 'none';
+      countEl.textContent = total ? `${grid.querySelectorAll('.product-card').length} produit(s) affiché(s) sur ${total}` : '';
+      window.watchReveal && window.watchReveal();
+    }
+
+    function renderFromStart(){
+      loadPage(0, { append: false });
+    }
+
+    // Recherche : on attend une courte pause après la dernière frappe avant
+    // d'interroger le serveur (évite une requête réseau à chaque lettre tapée)
+    let searchDebounce;
+    searchInput.addEventListener('input', function(){
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(renderFromStart, 300);
+    });
+
+    catSelect.addEventListener('change', renderFromStart);
+    sortSelect.addEventListener('change', renderFromStart);
+    loadMoreBtn.addEventListener('click', function(){ loadPage(currentPage + 1, { append: true }); });
+
+    renderFromStart();
   });
 </script>
 </body>

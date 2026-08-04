@@ -176,13 +176,13 @@
 <script src="js/main.js"></script>
 <script src="js/app-init.js"></script>
 <script>
-  document.addEventListener('sitedata:ready', function(){
+  document.addEventListener('sitedata:ready', async function(){
     // Produits filtrables par catégorie (pastilles)
     const grid = document.getElementById('featured-products');
     const pillsWrap = document.getElementById('home-cat-pills');
 
-    // Catégories dynamiques : reflète exactement les catégories utilisées par vos produits
-    const categories = getDynamicCategories();
+    // Catégories dynamiques : requête légère (2 colonnes), pas tout le catalogue
+    const categories = await fetchCategories();
     Object.keys(categories).forEach(function(key){
       const btn = document.createElement('button');
       btn.className = 'pill';
@@ -191,8 +191,12 @@
       pillsWrap.appendChild(btn);
     });
 
-    function renderHomeProducts(cat){
-      const list = filterProducts(cat, 'default').slice(0, 8);
+    let renderToken = 0;
+    async function renderHomeProducts(cat){
+      const myToken = ++renderToken;
+      grid.innerHTML = '<p>Chargement...</p>';
+      const list = await fetchFeaturedProducts(cat, 8); // seulement 8 produits transférés, colonnes allégées
+      if (myToken !== renderToken) return;
       grid.innerHTML = list.map(productCardHTML).join('') || '<p>Aucun produit dans cette catégorie pour le moment.</p>';
       window.watchReveal && window.watchReveal();
     }

@@ -175,7 +175,7 @@
 <script src="js/app-init.js"></script>
 <script src="js/order.js"></script>
 <script>
-  document.addEventListener('sitedata:ready', function(){
+  document.addEventListener('sitedata:ready', async function(){
     // Met à jour les libellés de tarif sous chaque mode de transport
     document.querySelectorAll('#transport-radio-group .meta').forEach(function(el){
       const modeId = el.getAttribute('data-meta-for');
@@ -201,8 +201,11 @@
 
     // Estimation des frais de transport (seulement possible si on connaît le produit exact)
     // Le prix utilisé est celui de la variante choisie sur la fiche produit (?prix=...) si présent,
-    // sinon le prix de base du produit.
-    const linkedProduct = produitIdParam ? PRODUCTS.find(p => p.id === produitIdParam) : null;
+    // sinon le prix de base du produit. Le produit est chargé via une requête dédiée
+    // (une seule ligne) plutôt que recherché dans un catalogue global non chargé.
+    const linkedProduct = produitIdParam ? await fetchProductById(produitIdParam) : null;
+    window.linkedProduct = linkedProduct; // réutilisé par js/order.js au moment de l'envoi
+
     const effectivePrix = prixParam ? Number(prixParam) : (linkedProduct ? linkedProduct.prix : null);
     const estimateEl = document.getElementById('order-transport-estimate');
     const qtyField = document.querySelector('[name="quantite"]');

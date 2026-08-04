@@ -1,10 +1,27 @@
 /* =========================================================
    PrecoTech237 — Chargement des données depuis Supabase
-   Ces variables sont vides au départ et remplies par
-   loadSiteData() (appelée par js/app-init.js sur chaque page).
+   ---------------------------------------------------------
+   IMPORTANT (perf, catalogue > 100 produits) :
+   - loadSettings() est LÉGER (contact + tarifs transport) et
+     est appelé sur TOUTES les pages via js/app-init.js.
+   - Le catalogue produit N'EST PLUS chargé automatiquement en
+     entier sur chaque page. Chaque page qui a besoin de produits
+     appelle explicitement l'une des fonctions ci-dessous, qui ne
+     renvoient QUE les colonnes et QUE le nombre de lignes utiles :
+       - fetchProductsPage()   → page paginée pour produits.html
+       - fetchFeaturedProducts() → 8 produits pour l'accueil
+       - fetchProductById()    → fiche produit complète (1 ligne)
+       - fetchSimilarProducts()→ 4 produits "voir aussi"
+       - fetchCategories()     → liste des catégories existantes
    ========================================================= */
 
-let PRODUCTS = [];
+const PAGE_SIZE = 24; // nb de produits par page dans le catalogue
+
+// Colonnes nécessaires pour une CARTE produit (accueil, catalogue, similaires)
+// -> pas de description, specs, variantes, option_groups, video_url : ces
+//    champs pèsent lourd et ne servent que sur la fiche produit détaillée.
+const CARD_COLUMNS = 'id, nom, categorie, categorie_label, prix, badge, disponibilite, images';
+
 let CONTACT = {
   whatsappNumber: "237600000000",
   email: "contact@precotech237.com",
@@ -17,8 +34,16 @@ let TRANSPORT_MODES = [
   { id: "aerien-express", label: "Aérien express", delai: "7 jours maximum", note: "Livraison rapide pour les besoins urgents", unite: "kg", tarif: 14000 }
 ];
 
+/* Conservé pour compatibilité : certaines pages/scripts historiques lisent
+   encore un tableau global PRODUCTS. Il n'est plus rempli automatiquement —
+   chaque page le peuple elle-même avec seulement ce dont elle a besoin
+   (voir fonctions fetch* plus bas). */
+let PRODUCTS = [];
+
 /* Transforme une ligne Supabase (colonnes en snake_case) en objet produit
-   utilisé partout ailleurs dans le site (camelCase) */
+   utilisé partout ailleurs dans le site (camelCase). Fonctionne aussi bien
+   pour une ligne "carte" allégée que pour une ligne complète : les champs
+   non sélectionnés en base restent simplement undefined/valeur par défaut. */
 function mapDbProduct(row){
   return {
     id: row.id,
@@ -73,51 +98,170 @@ function calcTransportCost(product, transportId, quantite){
   return 0;
 }
 
-/* Charge produits + réglages depuis Supabase. Renvoie une Promise.
-   En cas d'erreur réseau, garde les valeurs par défaut ci-dessus
-   pour que le site reste utilisable. */
-async function loadSiteData(){
+/* =========================================================
+   1) Données LÉGÈRES — appelées sur TOUTES les pages
+   ========================================================= */
+async function loadSettings(){
   try{
-    const { data: products, error: prodErr } = await supabaseClient
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: true });
-
-    if (prodErr) throw prodErr;
-    PRODUCTS = (products || []).map(mapDbProduct);
-
-    const { data: settings, error: setErr } = await supabaseClient
+    const { data: settings, error } = await supabaseClient
       .from('site_settings')
       .select('*');
-
-    if (setErr) throw setErr;
+    if (error) throw error;
     (settings || []).forEach(function(row){
       if (row.key === 'contact') Object.assign(CONTACT, row.value);
       if (row.key === 'transport_modes') TRANSPORT_MODES = row.value;
     });
-
-    // Note moyenne par produit, calculée à partir de tous les avis
-    const { data: reviewRows, error: revErr } = await supabaseClient
-      .from('reviews')
-      .select('product_id, note');
-
-    if (!revErr && reviewRows){
-      const grouped = {};
-      reviewRows.forEach(function(r){
-        if (!grouped[r.product_id]) grouped[r.product_id] = [];
-        grouped[r.product_id].push(r.note);
-      });
-      PRODUCTS.forEach(function(p){
-        const notes = grouped[p.id];
-        if (notes && notes.length){
-          p.ratingAvg = Math.round((notes.reduce((a,b) => a+b, 0) / notes.length) * 10) / 10;
-          p.ratingCount = notes.length;
-        }
-      });
-    }
-
   } catch(err){
-    console.error('Erreur de chargement Supabase, utilisation des valeurs par défaut :', err);
+    console.error('Erreur de chargement des réglages (Supabase), valeurs par défaut utilisées :', err);
+  }
+}
+
+/* =========================================================
+   2) Notes moyennes — uniquement pour un lot précis de produits
+   (jamais toute la table "reviews" d'un coup)
+   ========================================================= */
+async function attachRatings(products){
+  if (!products.length) return products;
+  const ids = products.map(p => p.id);
+  try{
+    const { data: reviewRows, error } = await supabaseClient
+      .from('reviews')
+      .select('product_id, note')
+      .in('product_id', ids);
+    if (error) throw error;
+
+    const grouped = {};
+    (reviewRows || []).forEach(function(r){
+      if (!grouped[r.product_id]) grouped[r.product_id] = [];
+      grouped[r.product_id].push(r.note);
+    });
+    products.forEach(function(p){
+      const notes = grouped[p.id];
+      if (notes && notes.length){
+        p.ratingAvg = Math.round((notes.reduce((a,b) => a+b, 0) / notes.length) * 10) / 10;
+        p.ratingCount = notes.length;
+      }
+    });
+  } catch(err){
+    console.error('Erreur de chargement des avis :', err);
+  }
+  return products;
+}
+
+/* =========================================================
+   3) Catégories disponibles (pour les filtres / pastilles)
+   Colonnes ultra-légères, pas de select('*').
+   ========================================================= */
+async function fetchCategories(){
+  try{
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('categorie, categorie_label');
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach(function(row){
+      if (row.categorie && !map[row.categorie]) map[row.categorie] = row.categorie_label || row.categorie;
+    });
+    return map; // { 'laptops': 'Laptops', ... }
+  } catch(err){
+    console.error('Erreur de chargement des catégories :', err);
+    return {};
+  }
+}
+
+/* =========================================================
+   4) Catalogue PAGINÉ côté serveur (produits.html)
+   Filtre catégorie + recherche + tri sont appliqués par la
+   requête Supabase elle-même (pas de scan d'un gros tableau
+   côté navigateur), et seule la page demandée est transférée.
+   ========================================================= */
+async function fetchProductsPage({ categorie = 'all', recherche = '', tri = 'default', page = 0 } = {}){
+  try{
+    let query = supabaseClient
+      .from('products')
+      .select(CARD_COLUMNS, { count: 'exact' });
+
+    if (categorie && categorie !== 'all'){
+      query = query.eq('categorie', categorie);
+    }
+    if (recherche && recherche.trim()){
+      const q = recherche.trim();
+      // recherche sur le nom OU la description, insensible à la casse
+      query = query.or(`nom.ilike.%${q}%,description.ilike.%${q}%`);
+    }
+    if (tri === 'prix-asc') query = query.order('prix', { ascending: true });
+    else if (tri === 'prix-desc') query = query.order('prix', { ascending: false });
+    else query = query.order('created_at', { ascending: true });
+
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    const products = (data || []).map(mapDbProduct);
+    await attachRatings(products);
+
+    return {
+      products,
+      total: count || 0,
+      hasMore: (from + products.length) < (count || 0)
+    };
+  } catch(err){
+    console.error('Erreur de chargement du catalogue :', err);
+    return { products: [], total: 0, hasMore: false };
+  }
+}
+
+/* =========================================================
+   5) Produits mis en avant sur l'accueil (8 max, une page)
+   ========================================================= */
+async function fetchFeaturedProducts(categorie = 'all', limit = 8){
+  const { products } = await fetchProductsPage({ categorie, page: 0 });
+  return products.slice(0, limit);
+}
+
+/* =========================================================
+   6) Fiche produit complète (une seule ligne, toutes colonnes)
+   ========================================================= */
+async function fetchProductById(id){
+  if (!id) return null;
+  try{
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    const product = mapDbProduct(data);
+    await attachRatings([product]);
+    return product;
+  } catch(err){
+    console.error('Erreur de chargement du produit :', err);
+    return null;
+  }
+}
+
+/* =========================================================
+   7) Produits similaires (même catégorie, colonnes allégées)
+   ========================================================= */
+async function fetchSimilarProducts(categorie, excludeId, limit = 4){
+  try{
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select(CARD_COLUMNS)
+      .eq('categorie', categorie)
+      .neq('id', excludeId)
+      .limit(limit);
+    if (error) throw error;
+    const products = (data || []).map(mapDbProduct);
+    await attachRatings(products);
+    return products;
+  } catch(err){
+    console.error('Erreur de chargement des produits similaires :', err);
+    return [];
   }
 }
 

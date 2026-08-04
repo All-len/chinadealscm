@@ -153,9 +153,15 @@
 <script src="js/app-init.js"></script>
 <script src="js/reviews.js"></script>
 <script>
-document.addEventListener('sitedata:ready', function(){
+document.addEventListener('sitedata:ready', async function(){
   const id = getUrlParam('id');
-  const product = PRODUCTS.find(p => p.id === id) || PRODUCTS[0];
+  const product = await fetchProductById(id);
+
+  if (!product){
+    document.getElementById('product-root').innerHTML =
+      '<div class="container"><p>Ce produit est introuvable ou n\'est plus disponible. <a href="produits.html">Retour au catalogue</a>.</p></div>';
+    return;
+  }
 
   document.title = product.nom + ' — PrecoTech237';
   document.getElementById('page-title').textContent = product.nom + ' — PrecoTech237';
@@ -414,8 +420,8 @@ document.addEventListener('sitedata:ready', function(){
   document.querySelectorAll('input[name="pd-transport"]').forEach(r => r.addEventListener('change', updateCTAs));
   updateCTAs();
 
-  // Produits similaires (même catégorie)
-  const similar = PRODUCTS.filter(p => p.categorie === product.categorie && p.id !== product.id).slice(0,4);
+  // Produits similaires (même catégorie) — requête dédiée, colonnes allégées
+  const similar = await fetchSimilarProducts(product.categorie, product.id, 4);
   document.getElementById('similar-products').innerHTML = similar.map(productCardHTML).join('') || '<p>Aucun autre produit dans cette catégorie pour le moment.</p>';
 });
 </script>
