@@ -75,10 +75,11 @@
 
     <div class="grid-4" id="catalog-grid"></div>
     <p id="catalog-count" style="text-align:center; color:var(--slate-light); font-size:.85rem; margin-top:18px;"></p>
+    <div id="catalog-sentinel" style="height:1px;"></div>
+    <p id="catalog-loading" style="text-align:center; color:var(--slate-light); display:none;">Chargement de produits supplémentaires...</p>
     <div style="text-align:center; margin-top:10px;">
       <button type="button" id="load-more-btn" class="btn btn-outline" style="display:none;">Voir plus de produits</button>
     </div>
-    <p id="catalog-loading" style="text-align:center; color:var(--slate-light);">Chargement du catalogue...</p>
 
   </div>
 </section>
@@ -141,9 +142,12 @@
     const loadMoreBtn = document.getElementById('load-more-btn');
     const loadingEl = document.getElementById('catalog-loading');
     const countEl = document.getElementById('catalog-count');
+    const sentinel = document.getElementById('catalog-sentinel');
 
     let currentPage = 0;
     let requestToken = 0; // évite qu'une vieille réponse réseau écrase un résultat plus récent
+    let isLoading = false;
+    let hasMorePages = false;
 
     // Catégories disponibles (requête légère, colonnes catégorie uniquement)
     const categories = await fetchCategories();
@@ -160,6 +164,8 @@
 
     async function loadPage(page, { append = false } = {}){
       const myToken = ++requestToken;
+      isLoading = true;
+      loadingEl.textContent = append ? 'Chargement de produits supplémentaires...' : 'Chargement du catalogue...';
       loadingEl.style.display = 'block';
       loadMoreBtn.disabled = true;
 
@@ -174,6 +180,7 @@
 
       loadingEl.style.display = 'none';
       loadMoreBtn.disabled = false;
+      isLoading = false;
 
       const html = products.map(productCardHTML).join('');
       if (append){
@@ -183,13 +190,35 @@
       }
 
       currentPage = page;
-      loadMoreBtn.style.display = hasMore ? 'inline-flex' : 'none';
+      hasMorePages = hasMore;
+      // Le bouton ne sert que de repli si le navigateur ne supporte pas
+      // IntersectionObserver (voir plus bas) ; sinon il reste caché.
+      if (!('IntersectionObserver' in window)){
+        loadMoreBtn.style.display = hasMore ? 'inline-flex' : 'none';
+      }
       countEl.textContent = total ? `${grid.querySelectorAll('.product-card').length} produit(s) affiché(s) sur ${total}` : '';
       window.watchReveal && window.watchReveal();
     }
 
     function renderFromStart(){
       loadPage(0, { append: false });
+    }
+
+    // Scroll infini : dès que la sentinelle (juste sous la liste) devient
+    // visible, on charge automatiquement la page suivante — sans bouton,
+    // sans attendre que l'utilisateur clique.
+    if ('IntersectionObserver' in window){
+      const observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting && hasMorePages && !isLoading){
+            loadPage(currentPage + 1, { append: true });
+          }
+        });
+      }, { rootMargin: '400px 0px' }); // déclenche un peu avant que la sentinelle soit réellement visible
+      observer.observe(sentinel);
+    } else {
+      // Repli pour les très vieux navigateurs : bouton manuel
+      loadMoreBtn.addEventListener('click', function(){ loadPage(currentPage + 1, { append: true }); });
     }
 
     // Recherche : on attend une courte pause après la dernière frappe avant
@@ -202,7 +231,6 @@
 
     catSelect.addEventListener('change', renderFromStart);
     sortSelect.addEventListener('change', renderFromStart);
-    loadMoreBtn.addEventListener('click', function(){ loadPage(currentPage + 1, { append: true }); });
 
     renderFromStart();
   });
