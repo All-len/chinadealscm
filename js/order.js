@@ -1,17 +1,12 @@
 /* =========================================================
    PrecoTech237 — Traitement du formulaire de commande
-   Envoi vers WhatsApp (lien wa.me) + copie par e-mail (mailto)
    ---------------------------------------------------------
-   Remarque : un site 100% statique ne peut pas envoyer un e-mail
-   "en silence" depuis le serveur (il faut un serveur ou un service
-   tiers). Deux solutions sont proposées :
-   1) Solution immédiate (par défaut ici) : le formulaire ouvre le
-      client e-mail du visiteur avec le message déjà rempli (mailto:).
-   2) Solution automatique recommandée : brancher ce formulaire sur
-      WordPress + WooCommerce (avec un plugin d'e-mail comme WP Mail
-      SMTP) ou sur un service comme Formspree / EmailJS pour un envoi
-      100% automatique sans action du client. Voir la partie
-      "WordPress / WooCommerce" fournie séparément.
+   La commande est enregistrée dans Supabase, puis le client est
+   redirigé vers confirmation.html où il voit le récapitulatif
+   complet de sa commande et un lien de suivi. Le message WhatsApp
+   n'est plus envoyé automatiquement : un bouton facultatif est
+   proposé sur la page de confirmation pour ceux qui souhaitent
+   contacter un conseiller tout de suite.
    ========================================================= */
 
 function buildOrderMessage(data){
@@ -64,8 +59,13 @@ document.addEventListener('sitedata:ready', async function(){
     form.insertBefore(note, form.firstChild);
   }
 
-  form.addEventListener('submit', function(e){
+  form.addEventListener('submit', async function(e){
     e.preventDefault();
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enregistrement de votre commande...';
 
     const fd = new FormData(form);
     const transportInput = form.querySelector('input[name="transport"]:checked');
@@ -82,10 +82,12 @@ document.addEventListener('sitedata:ready', async function(){
     const prixUnitaire = prixUnitaireParam ? Number(prixUnitaireParam) : (linkedProduct ? linkedProduct.prix : null);
 
     let estimation = '';
+    let coutProduit = null, coutTransport = null, coutTotal = null;
     if (linkedProduct && transportMode && prixUnitaire != null){
-      const frais = calcTransportCost(linkedProduct, transportMode.id, quantite);
-      const sousTotal = prixUnitaire * (Number(quantite) || 1);
-      estimation = `Sous-total produit : ${formatFCFA(sousTotal)} | Frais transport estimés : ${formatFCFA(frais)} | Total estimé : ${formatFCFA(sousTotal + frais)}`;
+      coutTransport = calcTransportCost(linkedProduct, transportMode.id, quantite);
+      coutProduit = prixUnitaire * (Number(quantite) || 1);
+      coutTotal = coutProduit + (coutTransport || 0);
+      estimation = `Sous-total produit : ${formatFCFA(coutProduit)} | Frais transport estimés : ${formatFCFA(coutTransport)} | Total estimé : ${formatFCFA(coutTotal)}`;
     }
 
     const data = {
@@ -96,33 +98,20 @@ document.addEventListener('sitedata:ready', async function(){
       quantite: quantite,
       transportLabel: transportMode ? `${transportMode.label} (${transportMode.delai})` : 'Non précisé',
       estimation: estimation,
+      coutProduit: coutProduit,
+      coutTransport: coutTransport,
+      coutTotal: coutTotal,
       adresse: fd.get('adresse') || '',
       message: fd.get('message') || ''
     };
 
     const texte = buildOrderMessage(data);
 
-    // 1) Ouvre WhatsApp immédiatement (synchrone, pour éviter que le navigateur
-    //    bloque la pop-up si on attendait la réponse de la base de données avant)
-    const waUrl = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(texte)}`;
-    window.open(waUrl, '_blank');
-
-    // 2) Prépare le lien e-mail (mailto) — le visiteur peut l'envoyer en un clic
-    const mailUrl = `mailto:${CONTACT.email}?subject=${encodeURIComponent('Nouvelle commande - PrecoTech237')}&body=${encodeURIComponent(texte)}`;
-    const emailBtn = document.getElementById('send-email-copy');
-    if (emailBtn) emailBtn.href = mailUrl;
-
-    // 3) Enregistre la commande dans Supabase pour qu'elle apparaisse dans
-    //    l'espace admin (onglet "Commandes"), avec un statut modifiable.
-    //    Se fait en arrière-plan : si ça échoue (ex: pas de réseau), la
-    //    commande reste tout de même transmise via WhatsApp/e-mail ci-dessus.
-    let coutProduit = null, coutTransport = null, coutTotal = null;
-    if (linkedProduct && transportMode && prixUnitaire != null){
-      coutProduit = prixUnitaire * (Number(quantite) || 1);
-      coutTransport = calcTransportCost(linkedProduct, transportMode.id, quantite);
-      coutTotal = coutProduit + (coutTransport || 0);
-    }
-    supabaseClient.from('orders').insert({
+    // Enregistre la commande dans Supabase pour qu'elle apparaisse dans
+    // l'espace admin (onglet "Commandes"), avec un statut modifiable, et
+    // pour récupérer son identifiant (utilisé par la page de confirmation
+    // et le lien de suivi).
+    const res = await supabaseClient.from('orders').insert({
       nom: data.nom,
       telephone: data.telephone,
       email: data.email,
@@ -137,26 +126,36 @@ document.addEventListener('sitedata:ready', async function(){
       adresse: data.adresse,
       message: data.message || null,
       customer_id: loggedInCustomerId
-    }).select().single().then(function(res){
-      if (res.error){
-        console.error('Erreur enregistrement commande (Supabase) :', res.error);
-        return;
-      }
-      // Affiche le lien de suivi que le client peut enregistrer/mettre en favoris
-      const trackingUrl = `${window.location.origin}/suivi.html?id=${res.data.id}`;
-      const wrap = document.getElementById('tracking-link-wrap');
-      const link = document.getElementById('tracking-link');
-      if (wrap && link){
-        link.href = trackingUrl;
-        link.textContent = trackingUrl;
-        wrap.style.display = 'block';
-      }
-    });
+    }).select().single();
 
-    // Affiche le message de confirmation
-    const success = document.getElementById('form-success');
-    if (success) success.classList.add('show');
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalLabel;
 
-    form.reset();
+    if (res.error){
+      console.error('Erreur enregistrement commande (Supabase) :', res.error);
+      alert("Une erreur est survenue lors de l'enregistrement de votre commande. Vérifiez votre connexion puis réessayez, ou contactez-nous directement sur WhatsApp si le problème persiste.");
+      return;
+    }
+
+    // Le récapitulatif est transmis à confirmation.html via sessionStorage
+    // (propre au navigateur du client, pas besoin de relire Supabase avec
+    // des colonnes sensibles côté page publique).
+    sessionStorage.setItem('lastOrder', JSON.stringify({
+      orderId: res.data.id,
+      nom: data.nom,
+      telephone: data.telephone,
+      email: data.email,
+      produit: data.produit,
+      quantite: data.quantite,
+      transportLabel: data.transportLabel,
+      coutProduit: data.coutProduit,
+      coutTransport: data.coutTransport,
+      coutTotal: data.coutTotal,
+      adresse: data.adresse,
+      message: data.message,
+      waMessage: texte
+    }));
+
+    window.location.href = 'confirmation.html?id=' + res.data.id;
   });
 });

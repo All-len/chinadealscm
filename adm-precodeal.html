@@ -17,13 +17,7 @@
   .admin-header .header-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .admin-header .header-actions .btn{ padding:8px 14px; font-size:.82rem; }
 
-  /* Onglets : ligne sur desktop, grille 2x2 sur mobile (tout reste visible, rien de caché) */
-  .admin-tabs{ display:flex; gap:6px; margin-bottom:24px; border-bottom:1px solid var(--line); }
-  .admin-tabs button{
-    background:none; border:none; padding:12px 16px; font-family:'Sora',sans-serif; font-weight:700;
-    font-size:.88rem; color: var(--slate); cursor:pointer; border-bottom:3px solid transparent; border-radius:6px 6px 0 0;
-  }
-  .admin-tabs button.active{ color: var(--navy); border-bottom-color: var(--green); background:rgba(31,157,85,.06); }
+  /* Ancien système d'onglets horizontaux retiré : remplacé par la sidebar ci-dessus */
 
   /* Tableaux desktop */
   .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
@@ -59,6 +53,14 @@
   .modal-actions{ display:flex; gap:12px; margin-top:24px; }
 
   .banner-info{ background:#FFF7E6; border:1px solid #F3D89A; color:#8A6116; padding:14px 18px; border-radius:8px; font-size:.88rem; margin-bottom:26px; }
+  .bulk-row-error{ background:rgba(192,39,45,.06) !important; }
+  .bulk-row-error td{ color:#8a2126; }
+  .bulk-import-summary{ font-size:.88rem; font-weight:700; margin-bottom:10px; }
+  .bulk-photo-cell{ display:flex; flex-direction:column; gap:6px; min-width:160px; }
+  .bulk-photo-cell input[type="file"]{ font-size:.74rem; }
+  .bulk-photo-thumbs{ display:flex; gap:5px; flex-wrap:wrap; }
+  .bulk-photo-thumbs img{ width:34px; height:34px; object-fit:cover; border-radius:5px; border:1px solid var(--line); }
+  .bulk-photo-count{ font-size:.72rem; color:var(--slate-light); }
   .lock-screen{ min-height:70vh; display:flex; align-items:center; justify-content:center; }
   .lock-card{ background:#fff; border-radius: var(--radius); box-shadow: var(--shadow-lg); padding:40px; max-width:380px; width:100%; text-align:center; }
   #admin-app{ display:none; }
@@ -83,19 +85,65 @@
   }
   .admin-table td[data-label="Statut"]{ align-items:flex-start; }
 
+  /* ================= SIDEBAR DE NAVIGATION ================= */
+  .admin-layout{ display:flex; align-items:flex-start; gap:28px; }
+  .admin-sidebar{
+    width:230px; flex-shrink:0; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:14px; position:sticky; top:20px;
+  }
+  .admin-sidebar button{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:none;
+    padding:12px 14px; border-radius:8px; font-family:'Sora',sans-serif; font-weight:700; font-size:.86rem;
+    color:var(--slate); cursor:pointer; margin-bottom:4px;
+  }
+  .admin-sidebar button .ic-inline{ flex-shrink:0; width:18px; height:18px; }
+  .admin-sidebar button.active{ background:var(--navy); color:#fff; }
+  .admin-sidebar button:not(.active):hover{ background:var(--off-white); }
+  .admin-content{ flex:1; min-width:0; }
+  .admin-sidebar-toggle{
+    display:none; align-items:center; justify-content:center; width:40px; height:40px; border-radius:8px;
+    background:rgba(255,255,255,.12); border:none; color:#fff; cursor:pointer; flex-shrink:0;
+  }
+  .admin-sidebar-toggle span, .admin-sidebar-toggle span::before, .admin-sidebar-toggle span::after{
+    content:''; display:block; width:18px; height:2px; background:#fff; position:relative; transition:.2s;
+  }
+  .admin-sidebar-toggle span::before{ position:absolute; top:-6px; }
+  .admin-sidebar-toggle span::after{ position:absolute; top:6px; }
+  .admin-sidebar-overlay{ display:none; position:fixed; inset:0; background:rgba(11,37,69,.5); z-index:240; }
+  .admin-sidebar-overlay.show{ display:block; }
+
+  /* ================= TABLEAU DE BORD (statistiques) ================= */
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:32px; }
+  .stat-card{ background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .stat-card .stat-label{
+    font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; color:var(--slate-light);
+    font-family:'Sora',sans-serif; font-weight:700; margin-bottom:8px;
+  }
+  .stat-card .stat-value{ font-family:'Sora',sans-serif; font-weight:800; font-size:1.7rem; color:var(--navy); line-height:1.2; }
+  .stat-card .stat-sub{ font-size:.78rem; color:var(--slate-light); margin-top:4px; }
+  .stat-card.accent .stat-value{ color:var(--green-dark); }
+  .dashboard-section-title{ font-family:'Sora',sans-serif; font-weight:800; font-size:1rem; color:var(--navy); margin:0 0 14px; }
+  .statut-breakdown{ display:flex; flex-direction:column; gap:10px; }
+  .statut-breakdown-row{ display:flex; align-items:center; gap:12px; }
+  .statut-breakdown-row .label{ width:120px; flex-shrink:0; font-size:.85rem; color:var(--slate); }
+  .statut-breakdown-row .bar-track{ flex:1; background:var(--off-white); border-radius:20px; height:10px; overflow:hidden; }
+  .statut-breakdown-row .bar-fill{ height:100%; border-radius:20px; background:var(--navy); }
+  .statut-breakdown-row .count{ width:34px; text-align:right; font-weight:700; font-size:.85rem; color:var(--navy); flex-shrink:0; }
+
   /* ================= MOBILE ================= */
+  @media (max-width: 900px){
+    .admin-layout{ flex-direction:column; }
+    .admin-sidebar{
+      position:fixed; top:0; left:0; height:100%; width:270px; z-index:250; transform:translateX(-100%);
+      transition:transform .25s ease; border-radius:0; overflow-y:auto; padding-top:70px;
+    }
+    .admin-sidebar.open{ transform:translateX(0); }
+    .admin-sidebar-toggle{ display:inline-flex; }
+  }
+
   @media (max-width: 640px){
     .admin-header a.logo{ font-size:.92rem; }
     .admin-header .badge-role{ display:none; } /* décoratif, on libère la place sur petit écran */
-
-    .admin-tabs{
-      display:grid; grid-template-columns: 1fr 1fr; gap:6px; border-bottom:none;
-      background:#fff; padding:6px; border-radius:10px; box-shadow: var(--shadow); margin-bottom:20px;
-    }
-    .admin-tabs button{
-      border-radius:8px; padding:12px 8px; font-size:.8rem; border-bottom:none; text-align:center; line-height:1.25;
-    }
-    .admin-tabs button.active{ background: var(--navy); color:#fff; }
 
     /* Tableaux -> cartes empilées : plus de scroll caché, tout est lisible verticalement */
     .admin-table thead{ display:none; }
@@ -150,7 +198,10 @@
 <div id="admin-app">
   <header class="admin-header">
     <div class="container">
-      <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="admin-sidebar-toggle" id="admin-sidebar-toggle" aria-label="Menu"><span></span></button>
+        <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+      </div>
       <div class="header-actions">
         <span class="badge-role">Espace administrateur</span>
         <a href="index.html" class="btn btn-outline-white" style="padding:8px 16px; font-size:.85rem;">Voir le site</a>
@@ -166,17 +217,38 @@
         ✅ Ce site est connecté à une vraie base de données (Supabase). Toute modification ici (ajout, édition, suppression de produit, changement de coordonnées) est <b>immédiatement visible par tous vos clients</b> — aucun fichier à télécharger ni à remplacer.
       </div>
 
-      <div class="admin-tabs">
-        <button class="active" data-tab="commandes">Commandes</button>
-        <button data-tab="produits">Produits</button>
-        <button data-tab="import">Import en masse</button>
-        <button data-tab="contact">Informations du site</button>
-        <button data-tab="transport">Tarifs transport</button>
-        <button data-tab="avis">Avis clients</button>
+      <div class="admin-layout">
+        <div class="admin-sidebar-overlay" id="admin-sidebar-overlay"></div>
+        <nav class="admin-sidebar" id="admin-sidebar">
+          <button class="active" data-tab="dashboard"><span class="ic-inline" data-icon="chart"></span> Tableau de bord</button>
+          <button data-tab="commandes"><span class="ic-inline" data-icon="cart"></span> Commandes</button>
+          <button data-tab="produits"><span class="ic-inline" data-icon="laptop"></span> Produits</button>
+          <button data-tab="utilisateurs"><span class="ic-inline" data-icon="users"></span> Utilisateurs</button>
+          <button data-tab="avis"><span class="ic-inline" data-icon="star"></span> Avis clients</button>
+          <button data-tab="contact"><span class="ic-inline" data-icon="mail"></span> Informations du site</button>
+          <button data-tab="transport"><span class="ic-inline" data-icon="truck"></span> Tarifs transport</button>
+        </nav>
+
+        <div class="admin-content">
+
+      <!-- ONGLET TABLEAU DE BORD -->
+      <div id="tab-dashboard" class="tab-panel">
+        <h2 style="margin-bottom:20px;">Tableau de bord</h2>
+        <div class="stat-grid" id="stat-grid-main"></div>
+
+        <div class="card" style="padding:24px; margin-bottom:24px;">
+          <h3 class="dashboard-section-title">Commandes par statut</h3>
+          <div class="statut-breakdown" id="statut-breakdown"></div>
+        </div>
+
+        <div class="card" style="padding:24px;">
+          <h3 class="dashboard-section-title">Derniers événements</h3>
+          <div id="dashboard-recent"><p style="color:var(--slate-light);">Chargement...</p></div>
+        </div>
       </div>
 
       <!-- ONGLET COMMANDES -->
-      <div id="tab-commandes" class="tab-panel">
+      <div id="tab-commandes" class="tab-panel" style="display:none;">
         <div class="panel-head">
           <h2 style="margin:0;">Commandes (<span id="order-count">0</span>)</h2>
           <select id="order-filter-statut" style="padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-size:.85rem;">
@@ -211,7 +283,10 @@
       <div id="tab-produits" class="tab-panel" style="display:none;">
         <div class="panel-head">
           <h2 style="margin:0;">Catalogue (<span id="product-count">0</span> produits)</h2>
-          <button class="btn btn-primary" id="btn-new-product">+ Ajouter un produit</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-outline" id="btn-bulk-import">+ Importer plusieurs produits</button>
+            <button class="btn btn-primary" id="btn-new-product">+ Ajouter un produit</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table class="admin-table">
@@ -230,58 +305,26 @@
         </div>
       </div>
 
-      <!-- ONGLET IMPORT EN MASSE -->
-      <div id="tab-import" class="tab-panel" style="display:none;">
-        <h2>Import en masse de produits</h2>
-        <p>Préparez vos produits dans Excel ou Google Sheets (une ligne d'en-tête, puis une ligne par produit), puis copiez-collez l'ensemble — en-tête comprise — dans la zone ci-dessous.</p>
-
-        <div class="banner-info" style="background:var(--off-white); border-color:var(--line); color:var(--slate); font-size:.85rem; margin-bottom:24px;">
-          <b>Colonnes reconnues</b> (l'ordre n'a pas d'importance, seul l'intitulé compte) :<br>
-          <code>nom</code> · <code>categorie</code> · <code>prix</code> · <code>etat</code> · <code>disponibilite</code> (en_stock / sur_commande / rupture) · <code>badge</code> · <code>description</code> · <code>poids_kg</code> · <code>longueur_cm</code> · <code>largeur_cm</code> · <code>hauteur_cm</code> · <code>images</code> (plusieurs liens séparés par des virgules, facultatif si vous utilisez l'étape 2 ci-dessous)<br>
-          Seules les colonnes <b>nom</b>, <b>categorie</b> et <b>prix</b> sont obligatoires. Une catégorie tapée à l'identique d'une catégorie existante sera automatiquement réutilisée (sinon elle est créée).
+      <!-- ONGLET UTILISATEURS -->
+      <div id="tab-utilisateurs" class="tab-panel" style="display:none;">
+        <div class="panel-head">
+          <h2 style="margin:0;">Utilisateurs inscrits (<span id="customer-count">0</span>)</h2>
         </div>
-
-        <div class="form-card">
-          <h3 style="margin-top:0; font-size:1rem;">Étape 1 — Coller vos produits</h3>
-          <div class="form-row">
-            <label>Coller vos produits ici (avec la ligne d'en-tête)</label>
-            <textarea id="bulk-import-input" rows="8" placeholder="Collez ici les lignes copiées depuis Excel ou Google Sheets (en-tête en première ligne)."></textarea>
-          </div>
-          <button type="button" class="btn btn-outline" id="btn-bulk-preview">Prévisualiser</button>
-          <p class="form-note" id="bulk-import-note" style="display:none;"></p>
-        </div>
-
-        <div id="bulk-preview-wrap" style="display:none; margin-top:24px;">
-          <h3 style="font-size:1rem;">Aperçu (<span id="bulk-preview-count">0</span> ligne(s) valide(s) sur <span id="bulk-preview-total">0</span>)</h3>
-          <div class="table-wrap">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Ligne</th>
-                  <th>Nom</th>
-                  <th>Catégorie</th>
-                  <th>Prix</th>
-                  <th>Images</th>
-                  <th>Statut</th>
-                </tr>
-              </thead>
-              <tbody id="bulk-preview-tbody"></tbody>
-            </table>
-          </div>
-
-          <div class="form-card" style="margin-top:24px;">
-            <h3 style="margin-top:0; font-size:1rem;">Étape 2 (facultative) — Associer des photos</h3>
-            <p style="font-size:.85rem; color:var(--slate);">
-              Nommez chaque fichier en commençant par le nom du produit tel que saisi ci-dessus, suivi d'un numéro pour plusieurs photos — ex : <code>HP Pavilion 15-1.jpg</code>, <code>HP Pavilion 15-2.jpg</code>. Accents, majuscules et espaces n'ont pas d'importance. Sélectionnez en une fois toutes les photos de tous vos produits ; elles seront automatiquement réparties.
-            </p>
-            <div class="form-row">
-              <input type="file" id="bulk-images-upload" accept="image/*" multiple>
-            </div>
-            <button type="button" class="btn btn-outline" id="btn-bulk-assoc-photos">Associer les photos aux produits</button>
-            <p class="form-note" id="bulk-photo-status" style="display:none;"></p>
-          </div>
-
-          <button type="button" class="btn btn-primary" id="btn-bulk-confirm" style="display:none; margin-top:24px;">Confirmer l'import</button>
+        <p style="color:var(--slate); font-size:.88rem; margin-top:-10px;">Clients ayant créé un compte (voir « Mon compte » côté site). Les commandes passées sans créer de compte n'apparaissent pas ici — voir l'onglet Commandes pour l'historique complet.</p>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Téléphone</th>
+                <th>Ville</th>
+                <th>Adresse</th>
+                <th>Commandes</th>
+                <th>Dernière mise à jour</th>
+              </tr>
+            </thead>
+            <tbody id="customer-tbody"><tr><td colspan="6">Chargement...</td></tr></tbody>
+          </table>
         </div>
       </div>
 
@@ -352,6 +395,9 @@
             </thead>
             <tbody id="review-tbody"><tr><td colspan="7">Chargement...</td></tr></tbody>
           </table>
+        </div>
+      </div>
+
         </div>
       </div>
 
@@ -464,6 +510,52 @@
         <button type="button" class="btn btn-outline" id="btn-cancel-product">Annuler</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODALE IMPORT DE PLUSIEURS PRODUITS -->
+<div class="modal-overlay" id="bulk-import-modal">
+  <div class="modal-box" style="max-width:820px;">
+    <h3>Importer plusieurs produits</h3>
+
+    <div class="banner-info" style="margin-bottom:18px;">
+      Collez vos produits ci-dessous — une ligne par produit. Le plus simple : préparez votre liste dans <b>Excel ou Google Sheets</b>, sélectionnez vos cellules, copiez (Ctrl+C), puis collez directement dans la zone ci-dessous (Ctrl+V).
+    </div>
+
+    <p style="font-size:.85rem; color:var(--slate); margin-bottom:6px;"><b>Colonnes attendues</b> (la première ligne collée doit être cette ligne d'en-têtes, dans n'importe quel ordre) :</p>
+    <div class="table-wrap" style="margin-bottom:16px;">
+      <table class="admin-table" style="font-size:.78rem;">
+        <thead><tr>
+          <th>nom *</th><th>categorie *</th><th>categorie_label</th><th>prix *</th>
+          <th>etat</th><th>badge</th><th>disponibilite</th><th>poids_kg</th>
+          <th>longueur_cm</th><th>largeur_cm</th><th>hauteur_cm</th><th>description</th>
+        </tr></thead>
+        <tbody><tr>
+          <td>HP Pavilion 15</td><td>laptops</td><td>Laptops</td><td>350000</td>
+          <td>Neuf</td><td>Populaire</td><td>en_stock</td><td>2.3</td>
+          <td>38</td><td>26</td><td>3</td><td>i5, 8Go, 512Go SSD</td>
+        </tr></tbody>
+      </table>
+    </div>
+    <p style="font-size:.78rem; color:var(--slate-light); margin-top:-8px; margin-bottom:16px;">
+      * Champs obligatoires. <b>disponibilite</b> : en_stock / sur_commande / rupture (par défaut en_stock si vide). Les <b>photos se choisissent après l'analyse</b>, produit par produit, directement depuis votre ordinateur.
+    </p>
+
+    <div class="form-row">
+      <label>Coller vos produits ici</label>
+      <textarea id="bulk-import-text" rows="8" style="font-family:monospace; font-size:.82rem;" placeholder="nom	categorie	categorie_label	prix	etat	badge	disponibilite	poids_kg	longueur_cm	largeur_cm	hauteur_cm	description
+HP Pavilion 15	laptops	Laptops	350000	Neuf	Populaire	en_stock	2.3	38	26	3	i5, 8Go, 512Go SSD"></textarea>
+    </div>
+
+    <button type="button" class="btn btn-outline" id="btn-bulk-analyze" style="margin-bottom:16px;">Analyser</button>
+
+    <div id="bulk-import-preview"></div>
+    <div id="bulk-import-progress" style="display:none; margin-top:12px; font-size:.85rem; color:var(--slate);"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-primary" id="btn-bulk-confirm" style="display:none;">Importer</button>
+      <button type="button" class="btn btn-outline" id="btn-cancel-bulk-import">Fermer</button>
+    </div>
   </div>
 </div>
 

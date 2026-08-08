@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Commande confirmée — PrecoTech237</title>
+<link rel="icon" type="image/png" href="images/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .confirm-wrap{ max-width:640px; margin:0 auto; }
+  .confirm-head{ text-align:center; margin-bottom:28px; }
+  .confirm-check{
+    width:64px; height:64px; border-radius:50%; background:var(--green); color:#fff;
+    display:flex; align-items:center; justify-content:center; margin:0 auto 18px; box-shadow:0 8px 20px rgba(31,157,85,.3);
+  }
+  .confirm-check svg{ width:30px; height:30px; }
+  .recap-card{ background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:28px; box-shadow:var(--shadow); }
+  .recap-line{ display:flex; justify-content:space-between; gap:16px; padding:10px 0; border-bottom:1px solid var(--line); font-size:.92rem; }
+  .recap-line:last-child{ border-bottom:none; }
+  .recap-line .label{ color:var(--slate); flex-shrink:0; }
+  .recap-line .value{ font-weight:600; color:var(--navy); text-align:right; }
+  .recap-cost{ background:var(--off-white); border-radius:8px; padding:14px 16px; margin-top:16px; font-size:.88rem; }
+  .recap-cost .line{ display:flex; justify-content:space-between; padding:3px 0; }
+  .recap-cost .total{ font-weight:800; color:var(--navy); border-top:1px solid var(--line); margin-top:6px; padding-top:8px; }
+  .tracking-box{
+    margin-top:20px; padding:16px 18px; border:1px dashed rgba(31,157,85,.4); border-radius:8px; background:rgba(31,157,85,.06);
+  }
+  .tracking-box a{ font-weight:700; word-break:break-all; }
+  .confirm-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-top:24px; }
+  .confirm-actions .btn{ flex:1; min-width:200px; }
+  .confirm-empty{ text-align:center; padding:60px 20px; color:var(--slate); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container nav-row">
+    <a href="index.html" class="logo"><span class="dot"></span> PrecoTech237</a>
+    <nav class="main-nav">
+      <a href="index.html" class="nav-secondary">Accueil</a>
+      <a href="produits.html">Produits</a>
+      <a href="transport.html">Transport</a>
+      <a href="comment-ca-marche.html" class="nav-secondary">Comment ça marche</a>
+      <a href="a-propos.html" class="nav-secondary">À propos</a>
+      <a href="contact.html">Contact</a>
+      <a href="compte.html" class="account-nav-link mobile-account-link" id="account-nav-link-mobile">Se connecter</a>
+      <a href="commander.html" class="mobile-cta">Commander</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="compte.html" class="btn btn-outline account-nav-link" id="account-nav-link">Se connecter</a>
+      <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<section style="padding-top:32px; padding-bottom:60px;">
+  <div class="container confirm-wrap">
+
+    <div id="confirm-loaded" style="display:none;">
+      <div class="confirm-head">
+        <div class="confirm-check"><span class="ic-inline" data-icon="check"></span></div>
+        <h1 style="font-size:1.5rem; margin-bottom:6px;">Commande enregistrée !</h1>
+        <p style="color:var(--slate); margin:0;">Voici le récapitulatif de votre commande. Un conseiller PrecoTech237 la traitera très prochainement.</p>
+      </div>
+
+      <div class="recap-card">
+        <div class="recap-line"><span class="label">Produit</span><span class="value" id="rc-produit">—</span></div>
+        <div class="recap-line"><span class="label">Quantité</span><span class="value" id="rc-quantite">—</span></div>
+        <div class="recap-line"><span class="label">Mode de transport</span><span class="value" id="rc-transport">—</span></div>
+        <div class="recap-line"><span class="label">Nom</span><span class="value" id="rc-nom">—</span></div>
+        <div class="recap-line"><span class="label">Téléphone</span><span class="value" id="rc-telephone">—</span></div>
+        <div class="recap-line"><span class="label">E-mail</span><span class="value" id="rc-email">—</span></div>
+        <div class="recap-line"><span class="label">Adresse de livraison</span><span class="value" id="rc-adresse">—</span></div>
+        <div class="recap-line" id="rc-message-wrap" style="display:none;"><span class="label">Message</span><span class="value" id="rc-message">—</span></div>
+
+        <div class="recap-cost" id="rc-cost-wrap" style="display:none;">
+          <div class="line"><span>Sous-total produit</span><span id="rc-cout-produit"></span></div>
+          <div class="line"><span>Frais de transport estimés</span><span id="rc-cout-transport"></span></div>
+          <div class="line total"><span>Total estimé</span><span id="rc-cout-total"></span></div>
+          <small style="color:var(--slate-light);">Estimation indicative, confirmée par un conseiller avant expédition.</small>
+        </div>
+
+        <div class="tracking-box" id="rc-tracking-wrap" style="display:none;">
+          <div style="font-weight:700; margin-bottom:6px;"><span class="ic-inline" data-icon="truck"></span> Suivez votre commande à tout moment :</div>
+          <a id="rc-tracking-link" href="#"></a>
+          <div style="font-size:.8rem; margin-top:6px; color:var(--slate);">Enregistrez ce lien (capture d'écran ou favoris) — il vous permettra de suivre l'avancement et de laisser un avis une fois livré.</div>
+        </div>
+      </div>
+
+      <div class="confirm-actions">
+        <a href="#" id="rc-wa-link" target="_blank" class="btn btn-whatsapp"><span class="ic-inline" data-icon="chat"></span> Contacter un conseiller sur WhatsApp</a>
+        <a href="produits.html" class="btn btn-outline">Continuer mes achats</a>
+      </div>
+    </div>
+
+    <div id="confirm-empty" class="confirm-empty" style="display:none;">
+      <p>Aucun récapitulatif de commande à afficher pour cette page.</p>
+      <a href="commander.html" class="btn btn-primary" style="margin-top:14px;">Passer une commande</a>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer sheet-footer">
+  <div class="sheet-handle"></div>
+  <div class="container">
+    <div class="sheet-brand">
+      <div class="logo-mark"><span class="dot"></span> PrecoTech237</div>
+      <p>Votre partenaire de confiance pour l'importation de produits high-tech depuis la Chine vers le Cameroun.</p>
+    </div>
+
+    <div class="chip-row">
+      <a href="index.html" class="chip">Accueil</a>
+      <a href="produits.html" class="chip">Produits</a>
+      <a href="transport.html" class="chip">Transport</a>
+      <a href="comment-ca-marche.html" class="chip">Comment ça marche</a>
+      <a href="a-propos.html" class="chip">À propos</a>
+      <a href="commander.html" class="chip">Commander</a>
+      <a href="faq.html" class="chip">FAQ</a>
+      <a href="garantie-retours.html" class="chip">Garantie &amp; retours</a>
+    </div>
+
+    <div class="chip-row contact-chips">
+      <a href="#" id="footer-phone-link" target="_blank" class="chip"><span class="ic-inline" data-icon="phone"></span> <span id="footer-phone">+237 6XX XXX XXX</span></a>
+      <a href="#" id="footer-email-link" class="chip"><span class="ic-inline" data-icon="mail"></span> <span id="footer-email">contact@precotech237.com</span></a>
+      <span class="chip"><span class="ic-inline" data-icon="pin"></span> <span id="footer-address">Bafoussam, Cameroun</span></span>
+    </div>
+
+    <div class="sheet-bottom">
+      <span>© 2026 PrecoTech237</span>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <span>Paiement à la livraison ou avant expédition, selon accord.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/reveal.js"></script>
+<script src="js/main.js"></script>
+<script src="js/app-init.js"></script>
+<script>
+  document.addEventListener('sitedata:ready', function(){
+    const raw = sessionStorage.getItem('lastOrder');
+    const urlOrderId = getUrlParam('id');
+
+    // Sécurité simple : le récapitulatif affiché doit correspondre à la commande
+    // demandée dans l'URL (évite d'afficher un ancien récap si l'utilisateur
+    // navigue directement vers confirmation.html?id=... d'une autre commande).
+    let order = null;
+    if (raw){
+      try{
+        const parsed = JSON.parse(raw);
+        if (!urlOrderId || parsed.orderId === urlOrderId) order = parsed;
+      } catch(e){ order = null; }
+    }
+
+    if (!order){
+      document.getElementById('confirm-empty').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('confirm-loaded').style.display = 'block';
+    document.getElementById('rc-produit').textContent = order.produit || '—';
+    document.getElementById('rc-quantite').textContent = order.quantite || '—';
+    document.getElementById('rc-transport').textContent = order.transportLabel || '—';
+    document.getElementById('rc-nom').textContent = order.nom || '—';
+    document.getElementById('rc-telephone').textContent = order.telephone || '—';
+    document.getElementById('rc-email').textContent = order.email || '—';
+    document.getElementById('rc-adresse').textContent = order.adresse || '—';
+
+    if (order.message){
+      document.getElementById('rc-message-wrap').style.display = 'flex';
+      document.getElementById('rc-message').textContent = order.message;
+    }
+
+    if (order.coutTotal != null){
+      document.getElementById('rc-cost-wrap').style.display = 'block';
+      document.getElementById('rc-cout-produit').textContent = formatFCFA(order.coutProduit || 0);
+      document.getElementById('rc-cout-transport').textContent = formatFCFA(order.coutTransport || 0);
+      document.getElementById('rc-cout-total').textContent = formatFCFA(order.coutTotal || 0);
+    }
+
+    if (order.orderId){
+      const trackingUrl = `${window.location.origin}/suivi.html?id=${order.orderId}`;
+      const trackWrap = document.getElementById('rc-tracking-wrap');
+      const trackLink = document.getElementById('rc-tracking-link');
+      trackWrap.style.display = 'block';
+      trackLink.href = trackingUrl;
+      trackLink.textContent = trackingUrl;
+    }
+
+    // Bouton WhatsApp facultatif : le client choisit lui-même s'il veut
+    // contacter un conseiller tout de suite — plus de redirection automatique.
+    const waLink = document.getElementById('rc-wa-link');
+    waLink.href = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(order.waMessage || '')}`;
+  });
+</script>
+</body>
+</html>

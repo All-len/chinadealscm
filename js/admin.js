@@ -89,11 +89,14 @@ async function showAdminApp(){
   await loadOrdersAdmin();
   renderOrderTable();
   bindOrderFilter();
+  await loadCustomersAdmin();
+  renderCustomerTable();
+  renderDashboard();
   initTabs();
+  initSidebarToggle();
   initModal();
   initOrderModal();
-  bindBulkImportForm();
-  bindBulkPhotoAssociation();
+  bindBulkImportModal();
   document.querySelectorAll('[data-icon]').forEach(function(el){
     const name = el.getAttribute('data-icon');
     if (ICONS[name]) el.innerHTML = ICONS[name];
@@ -102,7 +105,7 @@ async function showAdminApp(){
 
 /* ---------- Onglets ---------- */
 function initTabs(){
-  const buttons = document.querySelectorAll('.admin-tabs button');
+  const buttons = document.querySelectorAll('.admin-sidebar button[data-tab]');
   buttons.forEach(function(btn){
     btn.addEventListener('click', function(){
       buttons.forEach(b => b.classList.remove('active'));
@@ -232,309 +235,6 @@ function bindCategorySelect(){
     } else {
       newInput.style.display = 'none';
     }
-  });
-}
-
-/* =========================================================
-   Import en masse de produits (copier-coller depuis Excel/Sheets)
-   ========================================================= */
-
-// Intitulés de colonnes reconnus (accents/espaces/majuscules ignorés) -> nom de colonne interne
-const BULK_FIELD_ALIASES = {
-  nom:'nom', nomduproduit:'nom', produit:'nom', titre:'nom',
-  categorie:'categorie', categorielabel:'categorie',
-  prix:'prix', prixfcfa:'prix',
-  etat:'etat',
-  disponibilite:'disponibilite', stock:'disponibilite',
-  badge:'badge',
-  description:'description', desc:'description',
-  poids:'poids_kg', poidskg:'poids_kg',
-  longueur:'longueur_cm', longueurcm:'longueur_cm',
-  largeur:'largeur_cm', largeurcm:'largeur_cm',
-  hauteur:'hauteur_cm', hauteurcm:'hauteur_cm',
-  images:'images', photos:'images', image:'images', photo:'images'
-};
-const BULK_ALLOWED_DISPO = ['en_stock', 'sur_commande', 'rupture'];
-
-function bulkCompactKey(s){
-  return s.toString().trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, '');
-}
-
-// Excel/Sheets colle avec des tabulations ; on garde ; puis , en repli (CSV export)
-function bulkSplitLine(line){
-  if (line.indexOf('\t') !== -1) return line.split('\t');
-  if (line.indexOf(';') !== -1) return line.split(';');
-  return line.split(',');
-}
-
-function bulkToNumberOrNull(v){
-  if (v === undefined || v === null || v.toString().trim() === '') return null;
-  const n = Number(v.toString().trim().replace(',', '.'));
-  return isFinite(n) ? n : null;
-}
-
-function parseBulkInput(text){
-  const lines = text.split(/\r?\n/).filter(function(l){ return l.trim() !== ''; });
-  if (!lines.length) return { rows: [], error: 'Aucune donnée détectée — collez au moins une ligne d\'en-tête et une ligne de produit.' };
-
-  const headerCells = bulkSplitLine(lines[0]);
-  const fields = headerCells.map(function(h){ return BULK_FIELD_ALIASES[bulkCompactKey(h)] || null; });
-
-  if (fields.indexOf('nom') === -1 || fields.indexOf('categorie') === -1 || fields.indexOf('prix') === -1){
-    return { rows: [], error: 'Colonnes obligatoires manquantes dans l\'en-tête : il faut au moins "nom", "categorie" et "prix".' };
-  }
-
-  // Réutilise une catégorie existante si le libellé tapé correspond à une catégorie déjà en base
-  const knownCategories = getKnownCategories(); // { slug: label }
-  const labelToSlug = {};
-  Object.keys(knownCategories).forEach(function(slug){
-    labelToSlug[bulkCompactKey(knownCategories[slug])] = slug;
-  });
-
-  const rows = lines.slice(1).map(function(line, idx){
-    const cells = bulkSplitLine(line);
-    const data = {};
-    fields.forEach(function(field, i){
-      if (field) data[field] = (cells[i] || '').trim();
-    });
-
-    const errors = [];
-    const nom = data.nom || '';
-    const categorieLabel = data.categorie || '';
-    const prixRaw = (data.prix || '').replace(/[^\d.,-]/g, '').replace(',', '.');
-    const prix = Number(prixRaw);
-
-    if (!nom) errors.push('Nom manquant');
-    if (!categorieLabel) errors.push('Catégorie manquante');
-    if (!data.prix || !isFinite(prix) || prix <= 0) errors.push('Prix invalide');
-
-    let disponibilite = (data.disponibilite || 'en_stock').trim();
-    if (!BULK_ALLOWED_DISPO.includes(disponibilite)) disponibilite = 'en_stock';
-
-    const categorieKey = bulkCompactKey(categorieLabel);
-    const categorieSlug = labelToSlug[categorieKey] || slugify(categorieLabel || 'categorie');
-    const finalCategorieLabel = knownCategories[categorieSlug] || categorieLabel;
-
-    const images = (data.images || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-
-    const row = {
-      id: slugify(nom || 'produit') + '-' + Date.now().toString().slice(-5) + '-' + idx,
-      nom: nom,
-      categorie: categorieSlug,
-      categorie_label: finalCategorieLabel,
-      prix: isFinite(prix) ? prix : 0,
-      etat: data.etat || '',
-      disponibilite: disponibilite,
-      badge: data.badge || '',
-      description: data.description || '',
-      specs: [],
-      poids_kg: bulkToNumberOrNull(data.poids_kg),
-      longueur_cm: bulkToNumberOrNull(data.longueur_cm),
-      largeur_cm: bulkToNumberOrNull(data.largeur_cm),
-      hauteur_cm: bulkToNumberOrNull(data.hauteur_cm),
-      images: images,
-      video_url: null,
-      option_groups: [],
-      variantes: []
-    };
-
-    return { lineNumber: idx + 2, row: row, images: images, errors: errors, valid: errors.length === 0 };
-  });
-
-  return { rows: rows, error: null };
-}
-
-let bulkParsedRows = [];
-
-function renderBulkPreviewTable(){
-  const tbody = document.getElementById('bulk-preview-tbody');
-  const validRows = bulkParsedRows.filter(function(r){ return r.valid; });
-
-  document.getElementById('bulk-preview-count').textContent = validRows.length;
-  document.getElementById('bulk-preview-total').textContent = bulkParsedRows.length;
-
-  tbody.innerHTML = bulkParsedRows.map(function(r){
-    const statusHtml = r.valid
-      ? '<span style="color:var(--green-dark); font-weight:700;">✓ OK</span>'
-      : '<span style="color:#C0272D; font-weight:700;">✗ ' + escapeHtml(r.errors.join(', ')) + '</span>';
-    const prixTxt = r.row.prix ? Number(r.row.prix).toLocaleString('fr-FR') + ' FCFA' : '—';
-    return '<tr>' +
-      '<td data-label="Ligne">' + r.lineNumber + '</td>' +
-      '<td data-label="Nom">' + escapeHtml(r.row.nom || '—') + '</td>' +
-      '<td data-label="Catégorie">' + escapeHtml(r.row.categorie_label || '—') + '</td>' +
-      '<td data-label="Prix">' + prixTxt + '</td>' +
-      '<td data-label="Images">' + r.row.images.length + ' image(s)</td>' +
-      '<td data-label="Statut">' + statusHtml + '</td>' +
-      '</tr>';
-  }).join('');
-
-  document.getElementById('btn-bulk-confirm').style.display = validRows.length ? 'inline-flex' : 'none';
-  return validRows;
-}
-
-function bindBulkImportForm(){
-  const previewBtn = document.getElementById('btn-bulk-preview');
-  const confirmBtn = document.getElementById('btn-bulk-confirm');
-  const noteEl = document.getElementById('bulk-import-note');
-  const previewWrap = document.getElementById('bulk-preview-wrap');
-  if (!previewBtn || previewBtn.dataset.bound === '1') return;
-  previewBtn.dataset.bound = '1';
-
-  function showNote(el, message, isError){
-    el.textContent = message;
-    el.style.color = isError ? '#C0272D' : 'var(--green-dark)';
-    el.style.display = 'block';
-  }
-
-  previewBtn.addEventListener('click', function(){
-    noteEl.style.display = 'none';
-    const parsed = parseBulkInput(document.getElementById('bulk-import-input').value);
-
-    if (parsed.error){
-      previewWrap.style.display = 'none';
-      showNote(noteEl, parsed.error, true);
-      return;
-    }
-
-    bulkParsedRows = parsed.rows;
-    const validRows = renderBulkPreviewTable();
-    previewWrap.style.display = 'block';
-
-    // Réinitialise l'étape 2 (photos) à chaque nouvel aperçu, pour éviter d'associer
-    // des photos déjà uploadées à un aperçu périmé
-    document.getElementById('bulk-images-upload').value = '';
-    document.getElementById('bulk-photo-status').style.display = 'none';
-
-    if (!bulkParsedRows.length){
-      showNote(noteEl, 'Aucune ligne de produit trouvée sous l\'en-tête.', true);
-    } else if (!validRows.length){
-      showNote(noteEl, 'Aucune ligne valide à importer — corrigez les erreurs ci-dessus puis réessayez.', true);
-    }
-  });
-
-  confirmBtn.addEventListener('click', async function(){
-    const validRows = bulkParsedRows.filter(function(r){ return r.valid; }).map(function(r){ return r.row; });
-    if (!validRows.length) return;
-
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Import en cours...';
-
-    const { error } = await supabaseClient.from('products').upsert(validRows);
-
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = "Confirmer l'import";
-
-    if (error){
-      showNote(noteEl, 'Erreur lors de l\'import : ' + error.message, true);
-      return;
-    }
-
-    showNote(noteEl, '✓ ' + validRows.length + ' produit(s) importé(s) avec succès — déjà visibles sur le site.', false);
-
-    document.getElementById('bulk-import-input').value = '';
-    previewWrap.style.display = 'none';
-    confirmBtn.style.display = 'none';
-    bulkParsedRows = [];
-
-    await loadAdminData();
-    renderProductTable();
-  });
-}
-
-/* ---------- Étape 2 : association de photos en masse par nom de fichier ---------- */
-
-// Retire l'extension et un éventuel numéro final ("-1", "_2", " (3)") puis normalise
-// comme slugify() pour comparer au nom du produit de façon fiable
-function bulkExtractPhotoKey(filename){
-  const noExt = filename.replace(/\.[a-zA-Z0-9]+$/, '');
-  const noNum = noExt.replace(/[-_\s]*\(?\d+\)?$/, '');
-  return slugify(noNum || noExt);
-}
-
-// Numéro final du fichier (pour garder l'ordre 1, 2, 3... des photos d'un même produit)
-function bulkExtractPhotoIndex(filename){
-  const noExt = filename.replace(/\.[a-zA-Z0-9]+$/, '');
-  const m = noExt.match(/(\d+)\)?$/);
-  return m ? Number(m[1]) : 0;
-}
-
-function bindBulkPhotoAssociation(){
-  const assocBtn = document.getElementById('btn-bulk-assoc-photos');
-  if (!assocBtn || assocBtn.dataset.bound === '1') return;
-  assocBtn.dataset.bound = '1';
-
-  const fileInput = document.getElementById('bulk-images-upload');
-  const statusEl = document.getElementById('bulk-photo-status');
-
-  assocBtn.addEventListener('click', async function(){
-    statusEl.style.display = 'none';
-
-    if (!bulkParsedRows.length){
-      alert('Cliquez d\'abord sur « Prévisualiser » (étape 1) avant d\'associer des photos.');
-      return;
-    }
-    const files = Array.from(fileInput.files || []);
-    if (!files.length){
-      alert('Sélectionnez d\'abord une ou plusieurs photos.');
-      return;
-    }
-
-    // Regroupe les fichiers par produit (clé issue du nom de fichier), triés par numéro
-    const groups = {};
-    files.forEach(function(file){
-      const key = bulkExtractPhotoKey(file.name);
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(file);
-    });
-    Object.keys(groups).forEach(function(key){
-      groups[key].sort(function(a, b){ return bulkExtractPhotoIndex(a.name) - bulkExtractPhotoIndex(b.name); });
-    });
-
-    assocBtn.disabled = true;
-    assocBtn.textContent = 'Association en cours...';
-
-    const matchedKeys = new Set();
-    let uploadedCount = 0, failedCount = 0;
-
-    for (const r of bulkParsedRows){
-      if (!r.valid) continue;
-      const rowKey = slugify(r.row.nom || '');
-      const group = groups[rowKey];
-      if (!group || !group.length) continue;
-
-      matchedKeys.add(rowKey);
-
-      for (const file of group){
-        const path = `${r.row.id}/${Date.now()}-${safeFileName(file.name)}`;
-        const { error: upErr } = await supabaseClient.storage.from('product-images').upload(path, file);
-        if (upErr){ console.error('Erreur upload', file.name, upErr); failedCount++; continue; }
-        const { data: pub } = supabaseClient.storage.from('product-images').getPublicUrl(path);
-        if (pub && pub.publicUrl){
-          r.row.images.push(pub.publicUrl);
-          uploadedCount++;
-        }
-      }
-    }
-
-    assocBtn.disabled = false;
-    assocBtn.textContent = 'Associer les photos aux produits';
-
-    renderBulkPreviewTable();
-
-    const unmatchedGroups = Object.keys(groups).filter(function(k){ return !matchedKeys.has(k); });
-    let message = '✓ ' + uploadedCount + ' photo(s) associée(s) et envoyée(s) à ' + matchedKeys.size + ' produit(s).';
-    let isError = false;
-    if (failedCount) message += ' (' + failedCount + ' échec(s) d\'envoi, voir la console.)';
-    if (unmatchedGroups.length){
-      message += ' Aucun produit ne correspond à : ' + unmatchedGroups.map(function(k){ return groups[k][0].name; }).join(', ') + ' — vérifiez le nom du fichier par rapport au nom du produit.';
-      isError = true;
-    }
-
-    statusEl.textContent = message;
-    statusEl.style.color = isError ? '#C0272D' : 'var(--green-dark)';
-    statusEl.style.display = 'block';
   });
 }
 
@@ -1094,5 +794,368 @@ function bindTransportForm(){
     const note = document.getElementById('transport-saved-note');
     note.style.display = 'block';
     setTimeout(function(){ note.style.display = 'none'; }, 2500);
+  });
+}
+
+/* =========================================================
+   UTILISATEURS INSCRITS (customer_profiles)
+   ---------------------------------------------------------
+   Un utilisateur "inscrit" est un client ayant créé un compte
+   (voir compte.html / compte.js), donc une ligne dans
+   customer_profiles. Un client qui commande sans créer de compte
+   n'apparaît pas ici (il apparaît seulement dans l'onglet
+   Commandes) — c'est normal, on ne peut pas le forcer à créer
+   un compte.
+   ========================================================= */
+let adminCustomers = [];
+
+async function loadCustomersAdmin(){
+  const { data, error } = await supabaseClient
+    .from('customer_profiles')
+    .select('*')
+    .order('updated_at', { ascending: false });
+  if (error){
+    console.error('Erreur de chargement des utilisateurs :', error);
+    adminCustomers = [];
+    return;
+  }
+  adminCustomers = data || [];
+}
+
+function renderCustomerTable(){
+  const tbody = document.getElementById('customer-tbody');
+  document.getElementById('customer-count').textContent = adminCustomers.length;
+
+  if (!adminCustomers.length){
+    tbody.innerHTML = '<tr><td colspan="6">Aucun utilisateur inscrit pour le moment.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = adminCustomers.map(function(c){
+    const nbCommandes = adminOrders.filter(o => o.customer_id === c.id).length;
+    const date = c.updated_at ? new Date(c.updated_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—';
+    return `<tr>
+      <td data-label="Nom">${escapeHtml(c.nom || '—')}</td>
+      <td data-label="Téléphone">${escapeHtml(c.telephone || '—')}</td>
+      <td data-label="Ville">${escapeHtml(c.ville || '—')}</td>
+      <td data-label="Adresse">${escapeHtml(c.adresse || '—')}</td>
+      <td data-label="Commandes">${nbCommandes}</td>
+      <td data-label="Dernière mise à jour">${date}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* =========================================================
+   TABLEAU DE BORD (statistiques)
+   ========================================================= */
+function renderDashboard(){
+  const totalCommandes = adminOrders.length;
+  const commandesActives = adminOrders.filter(o => o.statut !== 'annulee' && o.statut !== 'livree').length;
+  const commandesAnnulees = adminOrders.filter(o => o.statut === 'annulee').length;
+  const chiffreAffaires = adminOrders
+    .filter(o => o.statut !== 'annulee')
+    .reduce((sum, o) => sum + (Number(o.cout_total) || 0), 0);
+
+  const ruptureCount = adminProducts.filter(p => p.disponibilite === 'rupture').length;
+
+  const totalNotes = adminReviews.length;
+  const moyenneNotes = totalNotes ? (adminReviews.reduce((s, r) => s + (r.note || 0), 0) / totalNotes) : 0;
+
+  // "Nouveau" = créé dans les 7 derniers jours
+  const unSemaine = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const commandesSemaine = adminOrders.filter(o => o.created_at && new Date(o.created_at).getTime() >= unSemaine).length;
+  const utilisateursSemaine = adminCustomers.filter(c => c.updated_at && new Date(c.updated_at).getTime() >= unSemaine).length;
+
+  const stats = [
+    { label: 'Chiffre d\'affaires', value: formatFCFA(chiffreAffaires), sub: 'commandes non annulées', accent: true },
+    { label: 'Commandes', value: totalCommandes, sub: `${commandesSemaine} cette semaine` },
+    { label: 'Commandes en cours', value: commandesActives, sub: `${commandesAnnulees} annulée(s)` },
+    { label: 'Produits au catalogue', value: adminProducts.length, sub: ruptureCount ? `${ruptureCount} en rupture` : 'Aucune rupture' },
+    { label: 'Utilisateurs inscrits', value: adminCustomers.length, sub: `${utilisateursSemaine} cette semaine` },
+    { label: 'Avis clients', value: totalNotes, sub: totalNotes ? `Note moyenne ${moyenneNotes.toFixed(1)}/5` : 'Aucun avis' }
+  ];
+
+  document.getElementById('stat-grid-main').innerHTML = stats.map(function(s){
+    return `<div class="stat-card${s.accent ? ' accent' : ''}">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-sub">${s.sub}</div>
+    </div>`;
+  }).join('');
+
+  // Répartition des commandes par statut (mini barres)
+  const breakdown = STATUT_SEQUENCE.concat(['annulee']).map(function(key){
+    const count = adminOrders.filter(o => o.statut === key).length;
+    const pct = totalCommandes ? Math.round((count / totalCommandes) * 100) : 0;
+    return `<div class="statut-breakdown-row">
+      <span class="label">${STATUT_LABELS[key]}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;"></div></div>
+      <span class="count">${count}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('statut-breakdown').innerHTML = breakdown || '<p style="color:var(--slate-light);">Aucune commande pour le moment.</p>';
+
+  // Dernières commandes (aperçu rapide, 5 plus récentes)
+  const recent = adminOrders.slice(0, 5);
+  document.getElementById('dashboard-recent').innerHTML = recent.length
+    ? recent.map(function(o){
+        const date = o.created_at ? new Date(o.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+        return `<div style="display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px dashed var(--line); font-size:.86rem;">
+          <span>${escapeHtml(o.nom)} — ${escapeHtml(o.produit_nom)}</span>
+          <span style="color:var(--slate-light); flex-shrink:0;">${date}</span>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--slate-light);">Aucune commande pour le moment.</p>';
+}
+
+/* =========================================================
+   IMPORT EN MASSE (plusieurs produits collés depuis Excel/Sheets)
+   ---------------------------------------------------------
+   Colonnes attendues (voir aussi la modale HTML) :
+   nom*, categorie*, categorie_label, prix*, etat, badge,
+   disponibilite, poids_kg, longueur_cm, largeur_cm, hauteur_cm,
+   description, images (URLs séparées par ";")
+   * = obligatoire
+   ========================================================= */
+const BULK_IMPORT_COLUMNS = [
+  'nom', 'categorie', 'categorie_label', 'prix', 'etat', 'badge',
+  'disponibilite', 'poids_kg', 'longueur_cm', 'largeur_cm', 'hauteur_cm',
+  'description'
+];
+const BULK_IMPORT_REQUIRED = ['nom', 'categorie', 'prix'];
+const BULK_IMPORT_DISPO_VALUES = ['en_stock', 'sur_commande', 'rupture'];
+
+let bulkImportParsedRows = []; // lignes valides prêtes à être insérées
+let bulkImportFilesByRowId = {}; // { rowId: [File, File, ...] } — photos choisies par produit, avant upload
+
+/* Découpe le texte collé en lignes/colonnes. Détecte automatiquement le
+   séparateur : tabulation (copier/coller depuis Excel ou Google Sheets,
+   le cas le plus courant et le plus fiable) sinon virgule. */
+function parseBulkImportText(text){
+  const lines = text.split(/\r\n|\r|\n/).map(l => l.trim()).filter(l => l.length > 0);
+  if (!lines.length){
+    return { rows: [], errors: [], globalError: 'Aucune ligne détectée. Collez au moins une ligne d\'en-têtes et une ligne de produit.' };
+  }
+
+  const delimiter = lines[0].includes('\t') ? '\t' : ',';
+  const headerCells = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+
+  const missingRequired = BULK_IMPORT_REQUIRED.filter(col => !headerCells.includes(col));
+  if (missingRequired.length){
+    return { rows: [], errors: [], globalError: `Colonne(s) obligatoire(s) manquante(s) dans l'en-tête : ${missingRequired.join(', ')}. Vérifiez l'orthographe exacte des colonnes (voir le tableau d'exemple ci-dessus).` };
+  }
+
+  const dataLines = lines.slice(1);
+  const rows = [];
+  const errors = [];
+
+  dataLines.forEach(function(line, i){
+    const cells = line.split(delimiter).map(c => c.trim());
+    const raw = {};
+    headerCells.forEach(function(colName, idx){
+      if (BULK_IMPORT_COLUMNS.includes(colName)) raw[colName] = cells[idx] !== undefined ? cells[idx] : '';
+    });
+
+    const rowErrors = [];
+    if (!raw.nom) rowErrors.push('nom manquant');
+    if (!raw.categorie) rowErrors.push('categorie manquante');
+    const prixNum = Number(raw.prix);
+    if (!raw.prix || isNaN(prixNum) || prixNum < 0) rowErrors.push('prix invalide');
+
+    let dispo = (raw.disponibilite || 'en_stock').trim();
+    if (!BULK_IMPORT_DISPO_VALUES.includes(dispo)) dispo = 'en_stock';
+
+    const nom = raw.nom || '';
+
+    const product = {
+      id: slugify(nom) + '-' + Date.now().toString().slice(-5) + '-' + i,
+      nom: nom,
+      categorie: raw.categorie || '',
+      categorie_label: raw.categorie_label || (raw.categorie ? raw.categorie.charAt(0).toUpperCase() + raw.categorie.slice(1) : ''),
+      prix: isNaN(prixNum) ? 0 : prixNum,
+      etat: raw.etat || '',
+      badge: raw.badge || '',
+      disponibilite: dispo,
+      poids_kg: raw.poids_kg ? Number(raw.poids_kg) || 0 : null,
+      longueur_cm: raw.longueur_cm ? Number(raw.longueur_cm) || 0 : null,
+      largeur_cm: raw.largeur_cm ? Number(raw.largeur_cm) || 0 : null,
+      hauteur_cm: raw.hauteur_cm ? Number(raw.hauteur_cm) || 0 : null,
+      description: raw.description || '',
+      images: [], // rempli au moment de l'import, à partir des photos choisies dans l'aperçu
+      specs: [],
+      option_groups: [],
+      variantes: []
+    };
+
+    if (rowErrors.length){
+      errors.push({ line: i + 2, nom: nom || '(sans nom)', messages: rowErrors }); // +2 = ligne réelle dans le texte collé (1 = en-tête)
+    } else {
+      rows.push(product);
+    }
+  });
+
+  return { rows, errors, globalError: null };
+}
+
+function renderBulkPreview(parsed){
+  const wrap = document.getElementById('bulk-import-preview');
+  const confirmBtn = document.getElementById('btn-bulk-confirm');
+
+  if (parsed.globalError){
+    wrap.innerHTML = `<p style="color:#C0272D; font-weight:600;">${escapeHtml(parsed.globalError)}</p>`;
+    confirmBtn.style.display = 'none';
+    bulkImportParsedRows = [];
+    return;
+  }
+
+  const validCount = parsed.rows.length;
+  const errorCount = parsed.errors.length;
+
+  let html = `<p class="bulk-import-summary">${validCount} produit(s) prêt(s) à importer${errorCount ? `, ${errorCount} ligne(s) en erreur (ignorée(s) si vous continuez)` : ''}.</p>`;
+
+  if (errorCount){
+    html += `<div class="table-wrap" style="margin-bottom:16px;"><table class="admin-table" style="font-size:.82rem;">
+      <thead><tr><th>Ligne</th><th>Produit</th><th>Problème(s)</th></tr></thead>
+      <tbody>${parsed.errors.map(e => `<tr class="bulk-row-error"><td>${e.line}</td><td>${escapeHtml(e.nom)}</td><td>${e.messages.join(', ')}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  if (validCount){
+    html += `<div class="table-wrap"><table class="admin-table" style="font-size:.82rem;">
+      <thead><tr><th>Nom</th><th>Catégorie</th><th>Prix</th><th>Disponibilité</th><th>Photos</th></tr></thead>
+      <tbody>${parsed.rows.map(p => `<tr>
+        <td>${escapeHtml(p.nom)}</td>
+        <td>${escapeHtml(p.categorie_label)}</td>
+        <td>${formatFCFA(p.prix)}</td>
+        <td>${escapeHtml(p.disponibilite)}</td>
+        <td class="bulk-photo-cell" data-row-id="${p.id}">
+          <input type="file" accept="image/*" multiple data-row-id="${p.id}">
+          <div class="bulk-photo-thumbs"></div>
+          <span class="bulk-photo-count">Aucune photo choisie</span>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  wrap.innerHTML = html;
+  bulkImportParsedRows = parsed.rows;
+  bulkImportFilesByRowId = {};
+  confirmBtn.style.display = validCount ? 'inline-flex' : 'none';
+  confirmBtn.textContent = `Importer ${validCount} produit(s)`;
+
+  // Sélection des photos par produit, depuis l'ordinateur de l'admin
+  wrap.querySelectorAll('.bulk-photo-cell input[type="file"]').forEach(function(input){
+    input.addEventListener('change', function(){
+      const rowId = this.dataset.rowId;
+      const files = Array.from(this.files || []);
+      bulkImportFilesByRowId[rowId] = files;
+
+      const cell = this.closest('.bulk-photo-cell');
+      const thumbsEl = cell.querySelector('.bulk-photo-thumbs');
+      const countEl = cell.querySelector('.bulk-photo-count');
+
+      thumbsEl.innerHTML = files.map(function(file){
+        const url = URL.createObjectURL(file);
+        return `<img src="${url}" alt="">`;
+      }).join('');
+      countEl.textContent = files.length
+        ? `${files.length} photo(s) sélectionnée(s)`
+        : 'Aucune photo choisie';
+    });
+  });
+}
+
+function openBulkImportModal(){
+  document.getElementById('bulk-import-text').value = '';
+  document.getElementById('bulk-import-preview').innerHTML = '';
+  document.getElementById('btn-bulk-confirm').style.display = 'none';
+  document.getElementById('bulk-import-progress').style.display = 'none';
+  bulkImportParsedRows = [];
+  bulkImportFilesByRowId = {};
+  document.getElementById('bulk-import-modal').classList.add('show');
+}
+
+function closeBulkImportModal(){
+  document.getElementById('bulk-import-modal').classList.remove('show');
+}
+
+function bindBulkImportModal(){
+  document.getElementById('btn-bulk-import').addEventListener('click', openBulkImportModal);
+  document.getElementById('btn-cancel-bulk-import').addEventListener('click', closeBulkImportModal);
+
+  document.getElementById('btn-bulk-analyze').addEventListener('click', function(){
+    const text = document.getElementById('bulk-import-text').value;
+    const parsed = parseBulkImportText(text);
+    renderBulkPreview(parsed);
+  });
+
+  document.getElementById('btn-bulk-confirm').addEventListener('click', async function(){
+    if (!bulkImportParsedRows.length) return;
+    const btn = this;
+    const progressEl = document.getElementById('bulk-import-progress');
+    btn.disabled = true;
+    progressEl.style.display = 'block';
+
+    // 1) Téléverse d'abord les photos de chaque produit (si des fichiers ont été choisis),
+    //    puis attache les URLs publiques obtenues au produit correspondant.
+    for (let i = 0; i < bulkImportParsedRows.length; i++){
+      const row = bulkImportParsedRows[i];
+      const files = bulkImportFilesByRowId[row.id] || [];
+      progressEl.textContent = `Envoi des photos : produit ${i + 1}/${bulkImportParsedRows.length} (${row.nom})...`;
+
+      for (const file of files){
+        const path = `${row.id}/${Date.now()}-${safeFileName(file.name)}`;
+        const { error: upErr } = await supabaseClient.storage.from('product-images').upload(path, file);
+        if (upErr){
+          console.error(`Erreur upload photo pour ${row.nom} :`, upErr);
+          continue; // on continue avec les autres photos plutôt que d'échouer tout l'import
+        }
+        const { data: pub } = supabaseClient.storage.from('product-images').getPublicUrl(path);
+        if (pub && pub.publicUrl) row.images.push(pub.publicUrl);
+      }
+    }
+
+    // 2) Insère tous les produits (avec leurs images déjà attachées) en une seule requête
+    progressEl.textContent = `Enregistrement de ${bulkImportParsedRows.length} produit(s)...`;
+    const { error } = await supabaseClient.from('products').insert(bulkImportParsedRows);
+
+    btn.disabled = false;
+    progressEl.style.display = 'none';
+
+    if (error){
+      alert("Erreur lors de l'import : " + error.message);
+      btn.textContent = `Importer ${bulkImportParsedRows.length} produit(s)`;
+      return;
+    }
+
+    await loadAdminData();
+    renderProductTable();
+    renderDashboard();
+    closeBulkImportModal();
+    alert(`${bulkImportParsedRows.length} produit(s) importé(s) avec succès.`);
+  });
+}
+
+function formatFCFA(n){
+  return Math.round(n).toLocaleString('fr-FR').replace(/,/g, ' ') + ' FCFA';
+}
+
+/* =========================================================
+   SIDEBAR MOBILE (menu tiroir)
+   ========================================================= */
+function initSidebarToggle(){
+  const sidebar = document.getElementById('admin-sidebar');
+  const overlay = document.getElementById('admin-sidebar-overlay');
+  const toggleBtn = document.getElementById('admin-sidebar-toggle');
+  if (!sidebar || !toggleBtn) return;
+
+  function openSidebar(){ sidebar.classList.add('open'); overlay.classList.add('show'); }
+  function closeSidebar(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+
+  toggleBtn.addEventListener('click', openSidebar);
+  overlay.addEventListener('click', closeSidebar);
+  // Referme automatiquement le tiroir après avoir choisi un onglet (mobile)
+  sidebar.querySelectorAll('button[data-tab]').forEach(function(btn){
+    btn.addEventListener('click', closeSidebar);
   });
 }

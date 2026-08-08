@@ -223,53 +223,116 @@ async function fetchCategories(){
 
 /* =========================================================
    4) Catalogue PAGINÉ côté serveur (produits.html)
-   Filtre catégorie + recherche + tri sont appliqués par la
-   requête Supabase elle-même (pas de scan d'un gros tableau
-   côté navigateur), et seule la page demandée est transférée.
+   ---------------------------------------------------------
+   - Tri par prix (prix-asc / prix-desc) : pagination classique
+     côté serveur, ordre stable, mise en cache normale.
+   - Tri par défaut ('default') = ORDRE ALÉATOIRE : le catalogue
+     est mélangé à CHAQUE chargement de page (nouvelle visite),
+     mais reste stable tant que l'utilisateur scrolle pendant
+     cette même visite (pas de doublons ni de produits sautés).
+     Le mélange est gardé en mémoire JS (pas en sessionStorage) :
+     il se réinitialise donc naturellement à chaque rechargement
+     de page, ce qui donne un ordre différent à chaque visite.
    ========================================================= */
-async function fetchProductsPage({ categorie = 'all', recherche = '', tri = 'default', page = 0 } = {}){
-  const cacheKey = 'products:' + JSON.stringify({ categorie, recherche: recherche.trim().toLowerCase(), tri, page });
+const RANDOM_FETCH_LIMIT = 2000; // sécurité : au-delà, seules les 2000 premières lignes entrent dans le tirage
+let _randomOrderCache = {}; // mémoire uniquement — { clé_filtre: [lignes déjà mélangées] }
+
+function shuffleArray(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Récupère (avec cache réseau normal) toutes les lignes légères
+   correspondant au filtre, non triées — c'est le mélange qui se
+   charge ensuite de l'ordre, à chaque chargement de page. */
+async function fetchRowsForRandomOrder(categorie, recherche){
+  const cacheKey = 'products-raw:' + JSON.stringify({ categorie, recherche: recherche.trim().toLowerCase() });
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
 
   try{
-    let query = supabaseClient
-      .from('products')
-      .select(CARD_COLUMNS, { count: 'exact' });
-
-    if (categorie && categorie !== 'all'){
-      query = query.eq('categorie', categorie);
-    }
+    let query = supabaseClient.from('products').select(CARD_COLUMNS).limit(RANDOM_FETCH_LIMIT);
+    if (categorie && categorie !== 'all') query = query.eq('categorie', categorie);
     if (recherche && recherche.trim()){
       const q = recherche.trim();
-      // recherche sur le nom OU la description, insensible à la casse
       query = query.or(`nom.ilike.%${q}%,description.ilike.%${q}%`);
     }
-    if (tri === 'prix-asc') query = query.order('prix', { ascending: true });
-    else if (tri === 'prix-desc') query = query.order('prix', { ascending: false });
-    else query = query.order('created_at', { ascending: true });
-
-    const from = page * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    query = query.range(from, to);
-
-    const { data, error, count } = await query;
+    const { data, error } = await query;
     if (error) throw error;
-
-    const products = (data || []).map(mapDbProduct);
-    await attachRatings(products);
-
-    const result = {
-      products,
-      total: count || 0,
-      hasMore: (from + products.length) < (count || 0)
-    };
-    cacheSet(cacheKey, result, CACHE_TTL.products);
-    return result;
+    const rows = data || [];
+    cacheSet(cacheKey, rows, CACHE_TTL.products);
+    return rows;
   } catch(err){
-    console.error('Erreur de chargement du catalogue :', err);
-    return { products: [], total: 0, hasMore: false };
+    console.error('Erreur de chargement du catalogue (ordre aléatoire) :', err);
+    return [];
   }
+}
+
+async function fetchProductsPage({ categorie = 'all', recherche = '', tri = 'default', page = 0 } = {}){
+  // --- Tri par prix : pagination classique côté serveur ---
+  if (tri === 'prix-asc' || tri === 'prix-desc'){
+    const cacheKey = 'products:' + JSON.stringify({ categorie, recherche: recherche.trim().toLowerCase(), tri, page });
+    const cached = cacheGet(cacheKey);
+    if (cached) return cached;
+
+    try{
+      let query = supabaseClient
+        .from('products')
+        .select(CARD_COLUMNS, { count: 'exact' });
+
+      if (categorie && categorie !== 'all'){
+        query = query.eq('categorie', categorie);
+      }
+      if (recherche && recherche.trim()){
+        const q = recherche.trim();
+        query = query.or(`nom.ilike.%${q}%,description.ilike.%${q}%`);
+      }
+      query = query.order('prix', { ascending: tri === 'prix-asc' });
+
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+
+      const products = (data || []).map(mapDbProduct);
+      await attachRatings(products);
+
+      const result = {
+        products,
+        total: count || 0,
+        hasMore: (from + products.length) < (count || 0)
+      };
+      cacheSet(cacheKey, result, CACHE_TTL.products);
+      return result;
+    } catch(err){
+      console.error('Erreur de chargement du catalogue :', err);
+      return { products: [], total: 0, hasMore: false };
+    }
+  }
+
+  // --- Tri par défaut : ordre aléatoire, mélangé à chaque chargement de page ---
+  const shuffleKey = JSON.stringify({ categorie, recherche: recherche.trim().toLowerCase() });
+  if (!_randomOrderCache[shuffleKey]){
+    const rawRows = await fetchRowsForRandomOrder(categorie, recherche);
+    _randomOrderCache[shuffleKey] = shuffleArray(rawRows);
+  }
+  const allShuffled = _randomOrderCache[shuffleKey];
+  const from = page * PAGE_SIZE;
+  const slice = allShuffled.slice(from, from + PAGE_SIZE);
+  const products = slice.map(mapDbProduct);
+  await attachRatings(products);
+
+  return {
+    products,
+    total: allShuffled.length,
+    hasMore: (from + products.length) < allShuffled.length
+  };
 }
 
 /* =========================================================
